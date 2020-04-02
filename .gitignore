@@ -1,0 +1,10 @@
+aerialbot-*.jpg
+aerialbot-tiles
+aerialbot.log
+config.ini
+
+# venv stuff
+bin
+include
+lib
+pyvenv.cfg
