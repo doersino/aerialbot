@@ -4,7 +4,7 @@
 
 #### ~~Check out [@americasquared](https://twitter.com/americasquared), an instance of ærialbot that tweets a satellite view of a randomly selected square mile of the United States every 4 hours!~~ Twitter has suspended this account, and it seems as though they won't permit any ærialbot instances – but you can still use this tool locally. Read on to find how how. Bummer, though. 😕
 
-!(One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616)[example.jpg]
+![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example.jpg)
 
 In a bit more detail, whenever you run ærialbot, it...
 
@@ -31,7 +31,7 @@ Here's why ærialbot is a [Good Bot](https://www.reddit.com/r/OutOfTheLoop/comme
 * **Geotagging:** Tweets will be geotagged with the precise location – you can disable this, of course.
 * **Logging:** Keeps a log file – whether that's for debugging or reminiscing is your call. Again, you can disable this easily.
 
-!()[demo.gif]
+![What is this? It's a progress indicator. What does it do? It indicates progress.](demo.gif)
 
 (Side note: If that's all a bit much for you, check out [gomati](https://github.com/doersino/gomati), my previous (and much more basic) shot at a Google Maps tile downloader and stitcher.)
 
