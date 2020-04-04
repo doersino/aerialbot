@@ -6,7 +6,7 @@
 
 In a bit more detail, whenever you run ærialbot, it...
 
-* **loads a shapefile** from disk,
+* **loads a [shapefile](https://en.wikipedia.org/wiki/Shapefile)** from disk,
 * generates a **random point**꙳ within the bounds of this shape,
 * figures out **which map tiles need to be downloaded** to cover a certain area around the point in sufficient꙳ detail,
 * **downloads those map tiles** from a provider of your choice real fast (a threadpool is involved!),
