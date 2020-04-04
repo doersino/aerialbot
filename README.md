@@ -111,7 +111,7 @@ Possibly. Please feel free to [file an issue](https://github.com/doersino/aerial
 * Commission [@smolrobots](https://twitter.com/smolrobots/status/1224096411056320514) to draw a little mascot – maybe a satellite with a camera, or planet earth taking a selfie.
 * Maybe split `aerialbot.py` up into multiple modules, take inspiration from [here](https://github.com/joaquinlpereyra/twitterImgBot).
 * Set up a...
-    * ... Japan-focused instance at @nihonmugenkei (?) with screen name "日本∞景", i.e. "infinite views of Japan" in reference to [Hiroshige's series of 100 woodblock prints](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo).
+    * ... Japan-focused instance at @nihonmusuukei (?) with screen name "日本∞景" or "日本無数景", i.e. "infinite/countless views of Japan" in reference to [Hiroshige's series of 100 woodblock prints](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo).
     * ... Korea-focused instance at @baekmanpyeong with screen name "백만평" in reference to the traditional area unit [Pyeong](https://en.wikipedia.org/wiki/Pyeong), which corresponds to 3.3058 m², meaning that a square comprising a million (baekman) Pyeong would be 1.818 kilometers on each side.
     * ... "worldwide" instance, maybe around 5 kilometers square.
     * ...n instance based on a shapefile containing the world's train tracks, if that's even publicly available (I'm sure [OSM data](https://wiki.openstreetmap.org/wiki/Shapefiles) could be filtered accordingly). Perhaps this would benefit from implementing a rotation feature.
