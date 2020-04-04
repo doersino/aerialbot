@@ -64,7 +64,13 @@ Once you've set everything up and configured it to your liking, run:
 $ python3 aerialbot.py
 ```
 
-That's basically it! If you want your bot to tweet at predefined intervals, use `cron`, [`runwhen`](http://code.dogmap.org/runwhen/) or a similar tool.
+That's basically it!
+
+If you want your bot to tweet at predefined intervals, use `cron`, [`runwhen`](http://code.dogmap.org/runwhen/) or a similar tool. To make `cron` work with `venv`, something like [this](https://stackoverflow.com/a/50556692) is required (in this example, ærialbot runs every four hours at 30 past the hour):
+
+```
+30 */4 * * * * /usr/bin/env bash -c 'cd /PATH/TO/aerialbot && source bin/activate && python3 aerialbot.py'
+```
 
 *Pro tip:* If you want to host multiple instances of ærialbot, you don't need multiple copies of the code – multiple config files suffice: simply run `python3 aerialbot.py one-of-your-config-files.ini`.
 
