@@ -31,8 +31,6 @@ Here's why ærialbot is a [Good Bot](https://www.reddit.com/r/OutOfTheLoop/comme
 * **Geotagging:** Tweets will be geotagged with the precise location – you can disable this, of course.
 * **Logging:** Keeps a log file – whether that's for debugging or reminiscing is your call. Again, you can disable this easily.
 
-*Side note:* If that's all a bit much for you, check out [gomati](https://github.com/doersino/gomati), my previous (and much more basic) implementation of a Google Maps tile downloader and stitcher.
-
 ![What is this? It's a progress indicator. What does it do? It indicates progress.](demo.gif)
 
 
@@ -87,7 +85,7 @@ Because it's cute and I like the "æ" ligature.
 
 Because satellite imagery [can be extremely beautiful](https://earthview.withgoogle.com), and I was looking for a way of regularly receiving high-resolution satellite views of arbitrary locations such as [the center pivot irrigation farms of the American heartland](http://www.thegreatamericangrid.com/archives/1441) or squares of the [Jefferson grid](https://kottke.org/15/08/the-jefferson-grid) in my Twitter timeline.
 
-Note that I've built this tool during the COVID-19 pandemic – when it was, you know, just kinda nice to see the great outdoors *somehow*.
+Note that I've built this tool (along with its predecessor [gomati](https://github.com/doersino/gomati)) during the COVID-19 pandemic – when it was, you know, just kinda nice to see the great outdoors *somehow*.
 
 ### Does this violate Google's terms of use?
 
