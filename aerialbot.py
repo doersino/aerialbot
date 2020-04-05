@@ -248,7 +248,7 @@ class GeoShape:
         i = 0
         while not self.contains(geopoint):
             i += 1
-            if i > 100:
+            if i > 250:
                 raise ValueError("cannot seem to find a point in the shape's bounding box that's within the shape – is your data definitely okay (it may well be if it's a bunch of spread-out islands)? if you're sure, you'll need to raise the iteration limit in this function")
             geopoint = GeoPoint.random(bounds)
 
