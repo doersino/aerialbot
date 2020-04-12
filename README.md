@@ -89,7 +89,7 @@ Note that I've built this tool (along with its predecessor [gomati](https://gith
 
 ### Does this violate Google's terms of use?
 
-*(That's only relevant if you configure ærialbot to download tiles from Google Maps, which is the default source – but other tile providers do exist.)*
+*(That's only relevant if you configure ærialbot to download tiles from Google Maps, which is the default source – but [other tile providers do exist](https://github.com/ANAT01/map-list-servers/).)*
 
 Probably. I haven't checked. But they haven't banned my IP for downloading tens of thousands of map tiles during development and testing, so you're probably good as long as you don't use this tool for downloading a centimeter-scale map of your country. What's more, I can't think of how an ærialbot-based Twitter bot would compete with or keep revenue from any of Google's products. (And it's always worth keeping in mind that Google is an incredibly profitable company that earns the bulk of its income via folks like you just going about their days surfing the ad-filled web.)
 
