@@ -14,7 +14,7 @@ In a bit more detail, whenever you run ærialbot, it...
 * **saves** that to disk,
 * and **tweets** the image, optionally with a geotag.
 
-#### Check out [@americasquared](https://twitter.com/americasquared), an instance of ærialbot that tweets a satellite view of a randomly selected square mile of the United States every 4 hours!
+#### Check out [@americasquared](https://twitter.com/americasquared), an instance of ærialbot that tweets a satellite view of a randomly selected square mile of the United States every 4 hours, or [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets every 6 hours!
 
 ![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example.jpg)
 
@@ -113,5 +113,4 @@ Possibly. Please feel free to [file an issue](https://github.com/doersino/aerial
 * Set up a...
     * ... Japan-focused instance at @nihonmusuukei (?) with screen name "日本∞景" or "日本無数景", i.e. "infinite/countless views of Japan" in reference to [Hiroshige's series of 100 woodblock prints](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo).
     * ... Korea-focused instance at @baekmanpyeong with screen name "백만평" in reference to the traditional area unit [Pyeong](https://en.wikipedia.org/wiki/Pyeong), which corresponds to 3.3058 m², meaning that a square comprising a million (baekman) Pyeong would be 1.818 kilometers on each side.
-    * ... "worldwide" instance, maybe around 5 kilometers square.
     * ...n instance based on a shapefile containing the world's train tracks, if that's even publicly available (I'm sure [OSM data](https://wiki.openstreetmap.org/wiki/Shapefiles) could be filtered accordingly). Perhaps this would benefit from implementing a rotation feature.
