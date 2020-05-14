@@ -890,6 +890,7 @@ def main():
         #if "location_full_name" in tweet_text or "location_country" in tweet_text:
         LOGGER.info("Getting location information from Twitter...")
         (location_full_name, location_country) = tweeter.get_location(point)
+        LOGGER.debug((location_full_name, location_country))
 
         LOGGER.info("Uploading image to Twitter...")
         media = tweeter.upload(image_path)
