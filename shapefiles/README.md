@@ -28,10 +28,11 @@ In order to coerce the original versions of the shapefiles (which are kept in `o
 1. Upload all relevant files (`.dbf`, `.prj`, `.shp`, and `.shx`).
 2. Simplify to desired level (depends on input granularity, often around 10%) with visual slider tool – on the [command line](https://github.com/mbloch/mapshaper/wiki/Command-Reference), this could be achieved via the `-simplify` flag.
 3. If polygon overlaps are present: `mapshaper -clean`.
-4. Fix projection if required via `mapshaper -proj crs=wgs84 target=LAYER_NAME` (the important bit is `+proj=longlat`, which is implied by `wgs84`).
-5. If it's a polyline: `mapshaper -polygon`.
+4. Fix projection if required (run `mapshaper info` to check) via `mapshaper -proj crs=wgs84 target=LAYER_NAME` (the important bit is `+proj=longlat`, which is implied by `wgs84`).
+5. If it's a polyline (run `mapshaper info` to check): `mapshaper -polygon`.
 6. Optionally: Remove features/regions you don't want (like Antarctica or large bodies of water, for example) via the visual tools.
 7. Turn all features/states/provinces/counties into a single feature: `mapshaper -dissolve`.
+8. Export.
 
 Some useful exploration steps using `pyshp` in the Python REPL:
 
