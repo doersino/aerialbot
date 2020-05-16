@@ -892,11 +892,22 @@ def main():
         (location_full_name, location_country) = tweeter.get_location(point)
         LOGGER.debug((location_full_name, location_country))
 
+        osm_url = f"https://www.openstreetmap.org/#map={zoom}/{point.lat}/{point.lon}"
+        googlemaps_url = f"https://www.google.com/maps/@{point.lat},{point.lon},{zoom}z"
+
         LOGGER.info("Uploading image to Twitter...")
         media = tweeter.upload(image_path)
 
         LOGGER.info("Sending tweet...")
-        tweet_text = tweet_text.format(latitude=point.lat, longitude=point.lon, point_fancy=point.fancy(), location_full_name=location_full_name, location_country=location_country)
+        tweet_text = tweet_text.format(
+            latitude=point.lat,
+            longitude=point.lon,
+            point_fancy=point.fancy(),
+            osm_url=osm_url,
+            googlemaps_url=googlemaps_url,
+            location_full_name=location_full_name,
+            location_country=location_country
+        )
         LOGGER.debug(tweet_text)
         if include_location_in_metadata:
             tweeter.tweet(tweet_text, media, point)
