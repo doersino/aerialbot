@@ -13,6 +13,22 @@ These shapefiles are from the following sources, their authors have mandated att
 | `world/` | [🔗](https://tapiquen-sig.jimdofree.com/english-version/free-downloads/world/) | Used `World_Countries.rar` | "Shape downloaded from http://tapiquen-sig.jimdo.com. Carlos Efraín Porto Tapiquén. Orogénesis Soluciones Geográficas. Porlamar, Venezuela, 2015." [📝](https://tapiquen-sig.jimdofree.com/english-version/free-downloads/world/) |
 | `denmark/` | [🔗](https://download.kortforsyningen.dk/content/danmarks-administrative-geografiske-inddeling-1500000) | Used `REGION.SHP` from `DAGI500_SHAPE_UTM32-EUREF89.zip` | "Source: Styrelsen for Dataforsyning og Effektivisering website  https://download.kortforsyningen.dk/content/danmarks-administrative-geografiske-inddeling-1500000" [📝](https://download.kortforsyningen.dk/content/danmarks-administrative-geografiske-inddeling-1500000) |
 
+If you're looking for a shapefile of a country or region that's not provided here, have some advice:
+
+* You can probably find one fairly easily by searching for "REGION shapefile".
+* The shapefiles found on the following sites that frequently crop up in search results aren't suitable for use with ærialbot:
+    * https://www.eea.europa.eu/data-and-maps/data/eea-reference-grids-2 (see [here](https://github.com/doersino/aerialbot/issues/4) for an explanation)
+    * http://download.geofabrik.de (they contain a bunch of features, but crucially *not* country outlines)
+* However, the shapefiles found in these places seem to be quite good:
+    * https://gadm.org/download_country_v3.html (select country, click on "Shapefile" link, then use the files named `gadm36_XXX_0`)
+    * https://globalmaps.github.io/national.html (click "Download National/Regional data")
+* National governments often provide publicly available shapefiles:
+    * https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html (for regions within the US)
+    * https://gdz.bkg.bund.de/index.php/default/catalog/product/view/id/766/s/gebietseinheiten-1-2-500-000-ge2500/category/8/?___store=default (for regions within Germany)
+    * https://www.gsi.go.jp/kankyochiri/gm_japan_e.html (for regions within Japan)
+    * ...
+* Use [mapshaper.org](https://mapshaper.org) as described above to inspect and, if required, process your shapefile.
+
 
 ## Processing
 

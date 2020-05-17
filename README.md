@@ -59,6 +59,8 @@ $ pip3 install -r requirements.txt
 
 Copy `config.sample.ini` to `config.ini`, open it and modify it based on the (admittedly wordy) instructions in the comments.
 
+See `shapefiles/README.md` for advice regarding finding shapefiles of the region you're interested in and preparing them for use with ærialbot.
+
 
 ### Running
 
