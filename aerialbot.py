@@ -696,10 +696,18 @@ class Tweeter:
     def get_location(self, geopoint):
         full_name = ""
         country = ""
-        location = self.api.reverse_geocode(geopoint.lat, geopoint.lon)
-        if location:
-            full_name = location[0].full_name
-            country = location[0].country
+
+        try:
+            location = self.api.reverse_geocode(geopoint.lat, geopoint.lon)
+            if location:
+                full_name = location[0].full_name
+                country = location[0].country
+        except KeyError:
+
+            # can apparently sometimes occur if twitter doesn't have geodata
+            # for the selected location
+            pass
+
         return (full_name, country)
 
     def upload(self, path):
