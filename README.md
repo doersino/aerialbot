@@ -19,6 +19,7 @@ Check out the following active ærialbot instances ([let me know](https://twitte
 * 🇺🇸 [@americasquared](https://twitter.com/americasquared), which tweets a satellite view of a randomly selected square mile of the United States every 4 hours (examples shown below).
 * 🇰🇷 [@baekmanpyeong](https://twitter.com/baekmanpyeong), which tweets a square sized one million (백만, *baekman*) [pyeong](https://en.wikipedia.org/wiki/Pyeong) (평, traditional Korean area unit, roughly 3.3058 m²), i.e. 1.818×1.818 km, somewhere in South Korea every 8 hours.
 * 🇩🇰 [@DanskKvadrat](https://twitter.com/DanskKvadrat) (run by [@Wegge](https://twitter.com/Wegge)), which focuses on Denmark and tweets a 2×2 km square every 4 hours.
+* 🇷🇴 [@AerianRobot](https://twitter.com/AerianRobot) (not sure who runs it), which tweets a square-shaped portion of Romania twice each day.
 * 🇳🇱 [@amsUpTop](https://twitter.com/amsUpTop) (run by [@kns008](https://twitter.com/kns008)), which tweets a random square of Amsterdam or its surroundings once a day.
 * 🗽 [@MarenBeam](https://twitter.com/MarenBeam), who has been using ærialbot to tweet tightly-zoomed views of Manhattan.
 * 🌍 [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets a 5×5 km square every 6 hours.
