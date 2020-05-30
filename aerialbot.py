@@ -779,6 +779,14 @@ def main():
     LOGGER.info("Processing configuration...")
 
     MapTile.tile_path_template = tile_path_template
+
+    # handle special case for Naver Map, where tiles are located at URLs like
+    # https://map.pstatic.net/nrb/styles/satellite/{naver_map_version}/{zoom}/{x}/{y}.jpg?mt=bg
+    if "{naver_map_version}" in tile_url_template:
+        LOGGER.info("Determining current Naver Map version and patching tile URL template...")
+        naver_map_version = requests.get("https://map.pstatic.net/nrb/styles/satellite.json").json()["version"]
+        LOGGER.debug(naver_map_version)
+        tile_url_template = tile_url_template.replace("{naver_map_version}", naver_map_version)
     MapTile.tile_url_template = tile_url_template
 
     # process max_meters_per_pixel setting
