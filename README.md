@@ -14,15 +14,19 @@ In a bit more detail, whenever you run ærialbot, it...
 * **saves** that to disk,
 * and **tweets** the image, optionally with a geotag.
 
-Check out the following active ærialbot instances ([let me know](https://twitter.com/Doersino) if you want yours to be included):
+Check out the following active ærialbot instances run by me...
 
 * 🇺🇸 [@americasquared](https://twitter.com/americasquared), which tweets a satellite view of a randomly selected square mile of the United States every 4 hours (examples shown below).
 * 🇰🇷 [@baekmanpyeong](https://twitter.com/baekmanpyeong), which tweets a square sized one million (백만, *baekman*) [pyeong](https://en.wikipedia.org/wiki/Pyeong) (평, traditional Korean area unit, roughly 3.3058 m²), i.e. 1.818×1.818 km, somewhere in South Korea every 8 hours.
+* 🗾 [@nihonmusuukei](https://twitter.com/nihonmusuukei) (*Nihon mu sū kei* = 日本無数景 ≈ 日本∞景, countless [views of Japan](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo)), which tweets a square kilometer of Japan every 12 hours.
+* 🌍 [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets a 5×5 km square every 6 hours.
+
+...and others ([let me know](https://twitter.com/Doersino) if you want yours to be included):
+
 * 🇩🇰 [@DanskKvadrat](https://twitter.com/DanskKvadrat) (run by [@Wegge](https://twitter.com/Wegge)), which focuses on Denmark and tweets a 2×2 km square every 4 hours.
 * 🇷🇴 [@AerianRobot](https://twitter.com/AerianRobot) (not sure who runs it), which tweets a square-shaped portion of Romania twice each day.
 * 🇳🇱 [@amsUpTop](https://twitter.com/amsUpTop) (run by [@kns008](https://twitter.com/kns008)), which tweets a random square of Amsterdam or its surroundings once a day.
 * 🗽 [@MarenBeam](https://twitter.com/MarenBeam), who has been using ærialbot to tweet tightly-zoomed views of Manhattan.
-* 🌍 [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets a 5×5 km square every 6 hours.
 
 ![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example.jpg)
 
@@ -122,4 +126,3 @@ Possibly. Please feel free to [file an issue](https://github.com/doersino/aerial
 * In addition to `GeoShape.random_geopoint`, also implement a `Shape.random_edge_geopoint` function for generating points on the edge of polygons (and polylines), and make it available via a config setting. This would 1. help test whether a given shapefile is accurate (and whether its projection is suitable), and 2. enable tweeting images of coasts or border regions, which might be interesting. Random point selection on polygon outlines would need to be done by randomly picking a segment of the outline via a distribution based on a prefix sum of the haversine distances along the outlines, then uniformly picking a point along the chosen segment (or linearly interpolating).
 * Similarly, if a shapefile with (multi)points instead of a polygon or polyline is given, randomly select a location among those points. This could be used to set up a Twitter bot that tweets landmarks belonging to a certain category around the world (if such data is publicly available, that is – I'm sure [OSM data](https://wiki.openstreetmap.org/wiki/Shapefiles) could be [filtered](https://github.com/osmcode/pyosmium/blob/master/examples/filter_coastlines.py) accordingly).
 * Enable ærialbot to generate side views of areas with elevation data using [rayshader](https://www.tylermw.com/a-step-by-step-guide-to-making-3d-maps-with-satellite-imagery-in-r/). This would look super neat, but elevation data is probably not available at the required level of detail for most regions of the world, and I'm not sure if the available satellite imagery is aligned with reality well enough for this to look good. Probably not worth the effort.
-* Set up a Japan-focused instance at @nihonmusuukei (?) with screen name "日本∞景" or "日本無数景", i.e. "infinite/countless views of Japan" in reference to [Hiroshige's series of 100 woodblock prints](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo).
