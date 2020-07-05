@@ -311,6 +311,7 @@ class MapTile:
             # check if already downloaded in tile store, otherwise download
             try:
                 self.image = Image.open(self.filename)
+                self.image.load()
                 self.status = MapTileStatus.CACHED
             except IOError:
                 self.download()
