@@ -21,6 +21,7 @@ import shapefile
 import shapely.geometry
 
 from PIL import Image, ImageEnhance, ImageOps
+Image.MAX_IMAGE_PIXELS = None
 
 import tweepy
 
