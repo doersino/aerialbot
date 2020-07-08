@@ -27,7 +27,7 @@ If you're looking for a shapefile of a country or region that's not provided her
     * https://gdz.bkg.bund.de/index.php/default/catalog/product/view/id/766/s/gebietseinheiten-1-2-500-000-ge2500/category/8/?___store=default (for regions within Germany)
     * https://www.gsi.go.jp/kankyochiri/gm_japan_e.html (for regions within Japan)
     * ...
-* Use [mapshaper.org](https://mapshaper.org) as described above to inspect and, if required, process your shapefile.
+* Use [mapshaper.org](https://mapshaper.org) as described below to inspect and, if required, process your shapefile.
 
 
 ## Processing
