@@ -832,34 +832,35 @@ def main():
 
         if point is None:
             LOGGER.info("Generating random point within shape...")
-            point = shape.random_geopoint()
+            p = shape.random_geopoint()
         else:
             LOGGER.info("Using configured point instead of shapefile...")
-            point = GeoPoint(point[0], point[1])
-        LOGGER.debug(point)
+            p = GeoPoint(point[0], point[1])
+        LOGGER.debug(p)
 
         LOGGER.info("Computing required tile zoom level at point...")
-        zoom = point.compute_zoom_level(max_meters_per_pixel)
+        zoom = p.compute_zoom_level(max_meters_per_pixel)
         LOGGER.debug(zoom)
 
         LOGGER.info("Generating rectangle with your selected width and height around point...")
-        rect = GeoRect.around_geopoint(point, width, height)
+        rect = GeoRect.around_geopoint(p, width, height)
         LOGGER.debug(rect)
 
         LOGGER.info("Turning rectangle into a grid of map tiles at the required zoom level...")
         grid = MapTileGrid.from_georect(rect, zoom)
         LOGGER.debug(grid)
 
-        # no need to do this if the point was set manually – clearly the user
-        # won't mind low-quality imagery
-        if shapefile is not None:
-            LOGGER.info("Checking quality of imagery available for the map tile grid...")
-            if not grid.has_high_quality_imagery():
-                LOGGER.info("Not good enough, let's try this again...")
-                point = None
-            else:
-                LOGGER.info("Lookin' good, let's proceed!")
-                break
+        # no need to do check quality if the point was set manually – clearly
+        # the user won't mind low-quality imagery
+        if point is not None:
+            break
+
+        LOGGER.info("Checking quality of imagery available for the map tile grid...")
+        if not grid.has_high_quality_imagery():
+            LOGGER.info("Not good enough, let's try this again...")
+        else:
+            LOGGER.info("Lookin' good, let's proceed!")
+            break
 
     ############################################################################
 
@@ -883,8 +884,8 @@ def main():
     LOGGER.info("Saving image to disk...")
     image_path = image_path_template.format(
         datetime=datetime.today().strftime("%Y-%m-%dT%H.%M.%S"),
-        latitude=point.lat,
-        longitude=point.lon,
+        latitude=p.lat,
+        longitude=p.lon,
         width=width,
         height=height,
         zoom=zoom,
@@ -907,20 +908,20 @@ def main():
 
         #if "location_full_name" in tweet_text or "location_country" in tweet_text:
         LOGGER.info("Getting location information from Twitter...")
-        (location_full_name, location_country) = tweeter.get_location(point)
+        (location_full_name, location_country) = tweeter.get_location(p)
         LOGGER.debug((location_full_name, location_country))
 
-        osm_url = f"https://www.openstreetmap.org/#map={zoom}/{point.lat}/{point.lon}"
-        googlemaps_url = f"https://www.google.com/maps/@{point.lat},{point.lon},{zoom}z"
+        osm_url = f"https://www.openstreetmap.org/#map={zoom}/{p.lat}/{p.lon}"
+        googlemaps_url = f"https://www.google.com/maps/@{p.lat},{p.lon},{zoom}z"
 
         LOGGER.info("Uploading image to Twitter...")
         media = tweeter.upload(image_path)
 
         LOGGER.info("Sending tweet...")
         tweet_text = tweet_text.format(
-            latitude=point.lat,
-            longitude=point.lon,
-            point_fancy=point.fancy(),
+            latitude=p.lat,
+            longitude=p.lon,
+            point_fancy=p.fancy(),
             osm_url=osm_url,
             googlemaps_url=googlemaps_url,
             location_full_name=location_full_name,
@@ -928,7 +929,7 @@ def main():
         )
         LOGGER.debug(tweet_text)
         if include_location_in_metadata:
-            tweeter.tweet(tweet_text, media, point)
+            tweeter.tweet(tweet_text, media, p)
         else:
             tweeter.tweet(tweet_text, media)
 
