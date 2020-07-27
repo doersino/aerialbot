@@ -494,14 +494,15 @@ class MapTileGrid:
         """
         Checks if the corners of the grid are available two levels more zoomed
         in, which should make sure that we're getting high-quality imagery at
-        the original zoom level."""
+        the original zoom level.
+        """
 
         zoom_delta = 2
 
         # since the at() function wraps around, [self.at(x, y) for x and y in
         # [0,-1]] selects the four corners of the grid, then for each of them a
         # "subgrid" is generated using .zoomed(), and for each of them, the
-        # relevant corner is accessed
+        # relevant corner is accessed through reuse of x and y
         corners = [self.at(x, y).zoomed(zoom_delta).at(x, y) for x in [0, -1] for y in [0, -1]]
 
         # check if they have all downloaded successfully
