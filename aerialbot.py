@@ -531,8 +531,8 @@ class MapTileGrid:
         tiles = self.flat()
         random.shuffle(tiles)
 
-        # download tiles using threadpool (2-4 times faster than [maptile.load()
-        # for maptile in self.flat()]), see
+        # download tiles using threadpool (2-10 times faster than
+        # [maptile.load() for maptile in self.flat()]), see
         # https://docs.python.org/dev/library/concurrent.futures.html#threadpoolexecutor-example
         threads = max(self.width, self.height)
         with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
@@ -542,7 +542,16 @@ class MapTileGrid:
         prog_thread.join()
         prog.cleanup()
 
-        # make sure all maptiles are, in fact, available
+        # retry failed downloads if fewer than 2% of tiles are missing (happens
+        # frequently when pulling from naver map)
+        missing_tiles = [maptile for maptile in self.flat() if maptile.status == MapTileStatus.ERROR]
+        if len(missing_tiles) < 0.02 * len(self.flat()):
+            if VERBOSITY != "quiet":
+                print("Retrying missing tiles...")
+            for maptile in missing_tiles:
+                maptile.load()
+
+        # check if we've got everything now
         missing_tiles = [maptile for maptile in self.flat() if maptile.status == MapTileStatus.ERROR]
         if missing_tiles:
             raise RuntimeError(f"unable to load one or more map tiles: {missing_tiles}")

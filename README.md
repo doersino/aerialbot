@@ -119,7 +119,6 @@ Possibly. Please feel free to [file an issue](https://github.com/doersino/aerial
 
 *These are ideas more than anything else – don't expect them to be implemented any time soon.*
 
-* Retry tile downloads once or twice if they fail – sometimes, packets just get lost forever even when using TCP, and it would be a shame to give up because of that if a bunch of tiles have already been downloaded successfully.
 * Commission [@smolrobots](https://twitter.com/smolrobots/status/1224096411056320514) to draw a little mascot – maybe a satellite with a camera, or planet earth taking a selfie.
 * Maybe split `aerialbot.py` up into multiple modules, take inspiration from [here](https://github.com/joaquinlpereyra/twitterImgBot). This might not be required right now, but would help if any of the ideas listed below are implemented.
 * Add an option to use [OSM/Nominatim](https://nominatim.org/release-docs/develop/api/Reverse/) for reverse geocoding. This could go along with a refactor where a `ReverseGeocoder` interface is introduced, which two classes `TwitterReverseGeocoder` (with a constructor taking the Twitter credentials) and `OsmReverseGeocoder` implement. The config file would have to be extended with a reverse geocoder selection option, plus a reverse geocode string template and an explanation of the available variables (which may differ depending on the selected geocoder). This reverse geocode string would then be referencable in the tweet template.
