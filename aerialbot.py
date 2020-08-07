@@ -946,8 +946,9 @@ def main():
     LOGGER.info("All done!")
 
 
-# log all exceptions
-try:
-    main()
-except Exception as e:
-    LOGGER.exception(e)
+if __name__ == "__main__":
+    # log all exceptions
+    try:
+        main()
+    except Exception as e:
+        LOGGER.exception(e)
