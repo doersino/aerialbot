@@ -35,6 +35,24 @@ LOGGER = None
 VERBOSITY = None
 
 
+class WebMercator:
+    """Various functions related to the Web Mercator projection."""
+
+    @staticmethod
+    def project(geopoint, zoom):
+        """
+        An implementation of the Web Mercator projection (see
+        https://en.wikipedia.org/wiki/Web_Mercator_projection#Formulas) that
+        returns floats. That's required for cropping of stitched-together tiles
+        such that they only show the configured area, hence no use of math.floor
+        here.
+        """
+
+        factor = (TILE_SIZE / (2 * math.pi)) * 2 ** (zoom - 8)  # -8 because 256 = 2^8
+        x = factor * (math.radians(geopoint.lon) + math.pi)
+        y = factor * (math.pi - math.log(math.tan((math.pi / 4) + (math.radians(geopoint.lat) / 2))))
+        return (x, y)
+
 class GeoPoint:
     """
     A latitude-longitude coordinate pair, in that order due to ISO 6709, see:
@@ -105,29 +123,18 @@ class GeoPoint:
             p = GeoPoint.random(GeoRect(GeoPoint(0,0),GeoPoint(90,10)))
             print(f"{p.lon} {p.lat}")
         sys.exit()
-        # run as: python3 bot.py | gnuplot -p -e "plot '<cat'"
+        # run as: python3 aerialbot.py | gnuplot -p -e "plot '<cat'"
         """
 
         return cls(lat, lon)
 
-    def web_mercator(self, zoom):
-        """
-        An implementation of the Web Mercator projection (see
-        https://en.wikipedia.org/wiki/Web_Mercator_projection#Formulas) that
-        returns floats. That's required for cropping of stitched-together tiles
-        such that they only show the configured area, hence no use of math.floor
-        here.
-        """
-
-        factor = (TILE_SIZE / (2 * math.pi)) * 2 ** (zoom - 8)  # - 8 because \shrug
-        x = factor * (math.radians(self.lon) + math.pi)
-        y = factor * (math.pi - math.log(math.tan((math.pi / 4) + (math.radians(self.lat) / 2))))
-        return (x, y)
-
     def to_maptile(self, zoom):
-        """Same as above, but with math.floor."""
+        """
+        Conversion of this geopoint to a tile through application of the Web
+        Mercator projection and flooring to get integer tile corrdinates.
+        """
 
-        x, y = self.web_mercator(zoom)
+        x, y = WebMercator.project(self, zoom)
         return MapTile(zoom, math.floor(x), math.floor(y))
 
     def to_shapely_point(self):
@@ -545,7 +552,7 @@ class MapTileGrid:
         # retry failed downloads if fewer than 2% of tiles are missing (happens
         # frequently when pulling from naver map)
         missing_tiles = [maptile for maptile in self.flat() if maptile.status == MapTileStatus.ERROR]
-        if len(missing_tiles) < 0.02 * len(self.flat()):
+        if 0 < len(missing_tiles) < 0.02 * len(self.flat()):
             if VERBOSITY != "quiet":
                 print("Retrying missing tiles...")
             for maptile in missing_tiles:
@@ -556,7 +563,12 @@ class MapTileGrid:
         if missing_tiles:
             raise RuntimeError(f"unable to load one or more map tiles: {missing_tiles}")
 
-        # stitch tiles together
+    def stitch(self):
+        """
+        Stitches the tiles together. Must not be called before all tiles have
+        been loaded.
+        """
+
         image = Image.new('RGB', (self.width * TILE_SIZE, self.height * TILE_SIZE))
         for x in range(0, self.width):
             for y in range(0, self.height):
@@ -579,8 +591,8 @@ class MapTileImage:
         input GeoRect. This function must only be called once per image.
         """
 
-        sw_x, sw_y = georect.sw.web_mercator(zoom)
-        ne_x, ne_y = georect.ne.web_mercator(zoom)
+        sw_x, sw_y = WebMercator.project(georect.sw, zoom)
+        ne_x, ne_y = WebMercator.project(georect.ne, zoom)
 
         # determine what we'll cut off
         sw_x_crop = round(TILE_SIZE * (sw_x % 1))
@@ -874,8 +886,11 @@ def main():
 
     ############################################################################
 
-    LOGGER.info("Downloading and stitching...")
+    LOGGER.info("Downloading tiles...")
     grid.download()
+
+    LOGGER.info("Stitching tiles together into an image...")
+    grid.stitch()
     image = MapTileImage(grid.image)
 
     LOGGER.info("Cropping image to match the chosen area width and height...")
