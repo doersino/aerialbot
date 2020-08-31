@@ -917,7 +917,8 @@ def main():
         xmin=grid.at(0, 0).x,
         xmax=grid.at(0, 0).x+grid.width,
         ymin=grid.at(0, 0).y,
-        ymax=grid.at(0, 0).y+grid.height
+        ymax=grid.at(0, 0).y+grid.height,
+        georect=f"sw{rect.sw.lat},{rect.sw.lon}ne{rect.ne.lat},{rect.ne.lon}"
     )
     LOGGER.debug(image_path)
     d = os.path.dirname(image_path)
