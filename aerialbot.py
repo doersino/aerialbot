@@ -913,11 +913,12 @@ def main():
         longitude=p.lon,
         width=width,
         height=height,
-        zoom=zoom,
+        max_meters_per_pixel=max_meters_per_pixel,
         xmin=grid.at(0, 0).x,
         xmax=grid.at(0, 0).x+grid.width,
         ymin=grid.at(0, 0).y,
         ymax=grid.at(0, 0).y+grid.height,
+        zoom=zoom,
         georect=f"sw{rect.sw.lat},{rect.sw.lon}ne{rect.ne.lat},{rect.ne.lon}"
     )
     LOGGER.debug(image_path)
