@@ -524,8 +524,7 @@ class MapTileGrid:
     def download(self):
         """
         Downloads the constitudent tiles using a threadpool for performance
-        while updating the progress indicator, finally stitches the tiles
-        together into a single image.
+        while updating the progress indicator.
         """
 
         # set up progress indicator
