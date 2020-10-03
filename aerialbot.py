@@ -829,10 +829,12 @@ def main():
 
     LOGGER.info("Processing configuration...")
 
-    MapTile.tile_path_template = tile_path_template
+    # handle tile url special cases
+    if tile_url_template == "googlemaps":
+        tile_url_template = "https://khms2.google.com/kh/v={google_maps_version}?x={x}&y={y}&z={zoom}"
+    elif tile_url_template == "navermap":
+        tile_url_template = "https://map.pstatic.net/nrb/styles/satellite/{naver_map_version}/{zoom}/{x}/{y}.jpg?mt=bg"
 
-    # handle specian case for Google Maps, where tile are located at URLs like
-    # https://khms2.google.com/kh/v={google_maps_version}?x={x}&y={y}&z={zoom}
     if "{google_maps_version}" in tile_url_template:
         LOGGER.info("Determining current Google Maps version and patching tile URL template...")
 
@@ -853,14 +855,13 @@ def main():
 
         tile_url_template = tile_url_template.replace("{google_maps_version}", google_maps_version)
 
-    # handle special case for Naver Map, where tiles are located at URLs like
-    # https://map.pstatic.net/nrb/styles/satellite/{naver_map_version}/{zoom}/{x}/{y}.jpg?mt=bg
     if "{naver_map_version}" in tile_url_template:
         LOGGER.info("Determining current Naver Map version and patching tile URL template...")
         naver_map_version = requests.get("https://map.pstatic.net/nrb/styles/satellite.json", headers={'User-Agent': USER_AGENT}).json()["version"]
         LOGGER.debug(naver_map_version)
         tile_url_template = tile_url_template.replace("{naver_map_version}", naver_map_version)
 
+    MapTile.tile_path_template = tile_path_template
     MapTile.tile_url_template = tile_url_template
 
     # process max_meters_per_pixel setting
