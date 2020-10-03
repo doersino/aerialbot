@@ -844,6 +844,7 @@ def main():
             match = re.search(rb'khms0\.google\.com\/kh\/v\\u003d([0-9]+)', google_maps_page)
             if match:
                 google_maps_version = match.group(1).decode('ascii')
+                LOGGER.debug(google_maps_version)
             else:
                 LOGGER.warning(f"Unable to extract current version, proceeding with outdated version {google_maps_version} instead.")
         except requests.RequestException as e:
