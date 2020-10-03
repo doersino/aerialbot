@@ -581,8 +581,8 @@ class MapTileImage:
     def __init__(self, image):
         self.image = image
 
-    def save(self, path):
-        self.image.save(path, quality=90)
+    def save(self, path, quality=90):
+        self.image.save(path, quality=quality)
 
     def crop(self, zoom, georect):
         """
@@ -788,6 +788,7 @@ def main():
     max_meters_per_pixel = config['IMAGE']['max_meters_per_pixel']
 
     apply_adjustments = config['IMAGE']['apply_adjustments']
+    image_quality = config['IMAGE']['image_quality']
 
     consumer_key = config['TWITTER']['consumer_key']
     consumer_secret = config['TWITTER']['consumer_secret']
@@ -924,7 +925,7 @@ def main():
     d = os.path.dirname(image_path)
     if not os.path.isdir(d):
         os.makedirs(d)
-    image.save(image_path)
+    image.save(image_path, image_quality)
 
     ############################################################################
 
