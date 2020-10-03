@@ -435,6 +435,7 @@ class ProgressIndicator:
     def update(self):
         """Updates the progress indicator."""
 
+        # if normal verbosity is selected, don't do anything fancy
         if VERBOSITY == "normal":
             self.update_text()
             return
