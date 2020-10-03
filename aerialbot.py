@@ -1,6 +1,7 @@
 import io
 import math
 import os
+import re
 import random
 import sys
 import time
@@ -332,10 +333,9 @@ class MapTile:
 
         self.status = MapTileStatus.DOWNLOADING
 
-        headers = {'User-Agent': USER_AGENT}
         try:
             url = MapTile.tile_url_template.format(x=self.x, y=self.y, zoom=self.zoom)
-            r = requests.get(url, headers=headers)
+            r = requests.get(url, headers={'User-Agent': USER_AGENT})
         except requests.exceptions.ConnectionError:
             self.status = MapTileStatus.ERROR
             return
@@ -830,13 +830,35 @@ def main():
 
     MapTile.tile_path_template = tile_path_template
 
+    # handle specian case for Google Maps, where tile are located at URLs like
+    # https://khms2.google.com/kh/v={google_maps_version}?x={x}&y={y}&z={zoom}
+    if "{google_maps_version}" in tile_url_template:
+        LOGGER.info("Determining current Google Maps version and patching tile URL template...")
+
+        # automatic fallback: current as of October 2020, will likely continue
+        # to work for at least a while
+        google_maps_version = '874'
+
+        try:
+            google_maps_page = requests.get("https://www.google.com/maps/", headers={'User-Agent': USER_AGENT}).content
+            match = re.search(rb'khms0\.google\.com\/kh\/v\\u003d([0-9]+)', google_maps_page)
+            if match:
+                google_maps_version = match.group(1).decode('ascii')
+            else:
+                LOGGER.warning(f"Unable to extract current version, proceeding with outdated version {google_maps_version} instead.")
+        except requests.RequestException as e:
+            LOGGER.warning(f"Unable to load Google Maps, proceeding with outdated version {google_maps_version} instead.")
+
+        tile_url_template = tile_url_template.replace("{google_maps_version}", google_maps_version)
+
     # handle special case for Naver Map, where tiles are located at URLs like
     # https://map.pstatic.net/nrb/styles/satellite/{naver_map_version}/{zoom}/{x}/{y}.jpg?mt=bg
     if "{naver_map_version}" in tile_url_template:
         LOGGER.info("Determining current Naver Map version and patching tile URL template...")
-        naver_map_version = requests.get("https://map.pstatic.net/nrb/styles/satellite.json").json()["version"]
+        naver_map_version = requests.get("https://map.pstatic.net/nrb/styles/satellite.json", headers={'User-Agent': USER_AGENT}).json()["version"]
         LOGGER.debug(naver_map_version)
         tile_url_template = tile_url_template.replace("{naver_map_version}", naver_map_version)
+
     MapTile.tile_url_template = tile_url_template
 
     # process max_meters_per_pixel setting
