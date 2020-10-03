@@ -400,24 +400,52 @@ class ProgressIndicator:
         elif maptile.status == MapTileStatus.ERROR:
             p("\033[41m\033[37m" + "XX")
 
+    def update_text(self):
+        """
+        Displays percentage and counts only.
+        """
+
+        cached = 0
+        downloaded = 0
+        errors = 0
+        for maptile in self.maptilegrid.flat():
+            if maptile.status == MapTileStatus.CACHED:
+                cached += 1
+            elif maptile.status == MapTileStatus.DOWNLOADED:
+                downloaded += 1
+            elif maptile.status == MapTileStatus.ERROR:
+                errors += 1
+
+        done = cached + downloaded
+        total = self.maptilegrid.width * self.maptilegrid.height
+        percent = int(10 * (100 * done / total)) / 10
+
+        details = f"{done}/{total}"
+        if cached:
+            details += f", {cached} cached"
+        if downloaded:
+            details += f", {downloaded} downloaded"
+        if errors:
+            details += f", {errors} errors"
+
+        # need a line break after it so that the first line of the next
+        # iteration of the progress indicator starts at col 0
+        print(f"{percent}% ({details})")
+
     def update(self):
         """Updates the progress indicator."""
 
-        done = 0
+        if VERBOSITY == "normal":
+            self.update_text()
+            return
+
         for y in range(self.maptilegrid.height):
             for x in range(self.maptilegrid.width):
                 maptile = self.maptilegrid.at(x, y)
                 self.update_tile(maptile)
-                if maptile.status == MapTileStatus.CACHED or maptile.status == MapTileStatus.DOWNLOADED:
-                    done += 1
             print()  # line break
 
-        # display percentage and count, need a line break after it so that the
-        # first line of the next iteration of the progress indicator starts at
-        # col 0
-        total = self.maptilegrid.width * self.maptilegrid.height
-        percent = int(10 * (100 * done / total)) / 10
-        print(f"{percent}% ({done}/{total})")
+        self.update_text()
 
         # move cursor back up to the beginning of the progress indicator for
         # the next iteration, see
@@ -440,7 +468,7 @@ class ProgressIndicator:
     def cleanup(self):
         """Moves the cursor back to the bottom after completion."""
 
-        if VERBOSITY == "quiet":
+        if VERBOSITY == "quiet" or VERBOSITY == "normal":
             return
 
         print(f"\033[{self.maptilegrid.height}B")
@@ -658,7 +686,6 @@ class Log:
         else:
             eh.setLevel(logging.WARNING)
         eh.addFilter(LevelFilter(logging.WARNING, logging.CRITICAL))
-        #stream_formatter = logging.Formatter('%(levelname)-8s ✈  %(message)s')
         stream_formatter = logging.Formatter('%(message)s')
         eh.setFormatter(stream_formatter)
         self.logger.addHandler(eh)
@@ -668,10 +695,9 @@ class Log:
             oh = logging.StreamHandler(stream=sys.stdout)
             if VERBOSITY == "deafening":
                 oh.setLevel(logging.DEBUG)
-            elif VERBOSITY == "verbose":
+            elif VERBOSITY == "verbose" or VERBOSITY == "normal":
                 oh.setLevel(logging.INFO)
             oh.addFilter(LevelFilter(logging.DEBUG, logging.INFO))
-            #stream_formatter = logging.Formatter('%(levelname)-8s ✈  %(message)s')
             stream_formatter = logging.Formatter('%(message)s')
             oh.setFormatter(stream_formatter)
             self.logger.addHandler(oh)
