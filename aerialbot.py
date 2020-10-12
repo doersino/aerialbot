@@ -153,11 +153,13 @@ class GeoPoint:
         https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Resolution_and_Scale
         """
 
+        meters_per_pixel_at_zoom_0 = ((EARTH_CIRCUMFERENCE / TILE_SIZE) * math.cos(math.radians(self.lat)))
+
         # 23 seems to be highest zoom level supported anywhere in the world, see
         # https://stackoverflow.com/a/32407072 (although 19 or 20 is the highest
         # in many places in practice)
         for zoom in reversed(range(0, 23+1)):
-            meters_per_pixel = ((EARTH_CIRCUMFERENCE / TILE_SIZE) * math.cos(math.radians(self.lat))) / (2 ** zoom)
+            meters_per_pixel = meters_per_pixel_at_zoom_0 / (2 ** zoom)
 
             # once meters_per_pixel eclipses the maximum, we know that the
             # previous zoom level was correct
