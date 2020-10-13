@@ -428,7 +428,10 @@ class ProgressIndicator:
         if downloaded:
             details += f", {downloaded} downloaded"
         if errors:
-            details += f", {errors} errors"
+            details += f", {errors} error"
+            if errors > 1:
+                details += "s"
+
 
         # need a line break after it so that the first line of the next
         # iteration of the progress indicator starts at col 0
