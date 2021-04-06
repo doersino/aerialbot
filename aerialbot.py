@@ -843,9 +843,9 @@ def main():
     if "{google_maps_version}" in tile_url_template:
         LOGGER.info("Determining current Google Maps version and patching tile URL template...")
 
-        # automatic fallback: current as of October 2020, will likely continue
+        # automatic fallback: current as of April 2021, will likely continue
         # to work for at least a while
-        google_maps_version = '874'
+        google_maps_version = '899'
 
         try:
             google_maps_page = requests.get("https://www.google.com/maps/", headers={'User-Agent': USER_AGENT}).content
