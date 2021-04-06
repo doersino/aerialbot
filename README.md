@@ -19,7 +19,7 @@ Check out the following active ærialbot instances run by me...
 * 🇺🇸 [@americasquared](https://twitter.com/americasquared), which tweets a satellite view of a randomly selected square mile of the United States every 6 hours (examples shown below).
 * 🇰🇷 [@baekmanpyeong](https://twitter.com/baekmanpyeong), which tweets a square sized one million (백만, *baekman*) [pyeong](https://en.wikipedia.org/wiki/Pyeong) (평, traditional Korean area unit, roughly 3.3058 m²), i.e. 1.818×1.818 km, somewhere in South Korea every 8 hours.
 * 🗾 [@nihonmusuukei](https://twitter.com/nihonmusuukei) (*Nihon mu sū kei* = 日本無数景 ≈ 日本∞景, countless [views of Japan](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo)), which tweets a square kilometer of Japan every 12 hours.
-* 🇩🇪 [@zehnhektar](https://twitter.com/zehnhektar), which tweets a square sized 316×316 meters (*Zehn Hektar* = ten hectacres) somewhere in Germany every 18 hours.
+* 🇩🇪 [@zehnhektar](https://twitter.com/zehnhektar), which tweets a square sized 316×316 meters (*Zehn Hektar* = ten hectacres) somewhere in Germany every 12 hours.
 * 🌍 [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets a 5×5 km square every 4 hours.
 
 ...and others ([let me know](https://twitter.com/Doersino) if you want yours to be included):
