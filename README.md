@@ -28,6 +28,7 @@ Check out the following active ærialbot instances run by me...
 * 🇷🇴 [@AerianRobot](https://twitter.com/AerianRobot) (not sure who runs it), which tweets a square-shaped portion of Romania twice each day.
 * 🇳🇱 [@NL_kwadraat](https://twitter.com/NL_kwadraat) (run by [@michelbinkhorst](https://twitter.com/michelbinkhorst)), which tweets a 2×2 km square of the Netherlands three times each day.
 * 🇳🇱 [@amsUpTop](https://twitter.com/amsUpTop) (run by [@kns008](https://twitter.com/kns008)), which tweets a random square of Amsterdam or its surroundings once a day.
+* 🇹🇷 [@turkeyfromorbit](https://twitter.com/turkeyfromorbit) (run by [@btutal](https://twitter.com/btutal) and also active on [Instagram](https://www.instagram.com/turkeyfromorbit/)), where an ærialbot instance tweets square-kilometer-sized satellite images of Turkey while an [earthacrosstime](https://github.com/doersino/earthacrosstime) instance posts videos as described in the next sentence.
 
 Also check out [@earthacrosstime](https://twitter.com/earthacrosstime), a "sibling" bot that tweets timelapse videos showcasing how random locations in the world have changed since 1984.
 
