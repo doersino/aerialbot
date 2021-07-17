@@ -32,6 +32,8 @@ Check out the following active ærialbot instances run by me...
 
 Also check out [@earthacrosstime](https://twitter.com/earthacrosstime), a "sibling" bot that tweets timelapse videos showcasing how random locations in the world have changed since 1984.
 
+I've set up a [Twitter list](https://twitter.com/i/lists/1416308332529393672), enabling you to check out (and perhaps follow) all of them.
+
 ![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example.jpg)
 
 
