@@ -94,6 +94,8 @@ If you want your bot to tweet at predefined intervals, use `cron`, [`runwhen`](h
 
 *Pro tip:* If you want to host multiple instances of ærialbot, you don't need multiple copies of the code – multiple config files suffice: simply run `python3 aerialbot.py one-of-your-config-files.ini`.
 
+*Uber pro tip:* Run `python3 aerialbot.py --help` to learn about some secret CLI options!
+
 
 ## FAQ
 

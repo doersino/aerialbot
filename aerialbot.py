@@ -7,6 +7,8 @@ import sys
 import time
 from datetime import datetime
 
+import argparse
+
 import logging
 import logging.config
 import traceback
@@ -786,13 +788,22 @@ def main():
     global VERBOSITY
     global LOGGER
 
+    # handle potential cli arguments
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument('--help', action='help', default=argparse.SUPPRESS, help=argparse._('show this help message and exit'))  # override default help argument so that only --help (and not -h) can call
+    parser.add_argument('config_path', metavar='CONFIG_PATH', type=str, nargs='?', default="config.ini", help='config file to use instead of looking for config.ini in the current working directory')
+    parser.add_argument('-p', '--point', dest='point', metavar='LAT,LON', type=str, help='a point, e.g. \'37.453896,126.446829\', that will override your configuration')
+    parser.add_argument('-m', '--max-meters-per-pixel', dest='max_meters_per_pixel', metavar='N', type=float, help='a maximum meters per pixel constraint that will override your configuration')
+    parser.add_argument('-w', '--width', dest='width', metavar='N', type=float, help='width of the depicted area in meters, will override your configuration')
+    parser.add_argument('-h', '--height', dest='height', metavar='N', type=float, help='height of the depicted area in meters, will override your configuration')
+    parser.add_argument('--image_width', dest='image_width', metavar='N', type=float, help='width of the result image, will override your configuration (where you can also find an explanation of how this option interacts with the -m, -w, and -h options)')
+    parser.add_argument('--image_height', dest='image_height', metavar='N', type=float, help='height of the result image, will override your configuration (where you can also find an explanation of how this option interacts with the -m, -w, and -h options)')
+    args = parser.parse_args()
+
     # load configuration either from config.ini or from a user-supplied file
     # (the latter option is handy if you want to run multiple instances of
     # ærialbot with different configurations)
-    configpath = "config.ini"
-    if (len(sys.argv) == 2):
-        configpath = sys.argv[1]
-    config = ConfigObj(configpath, unrepr=True)
+    config = ConfigObj(args.config_path, unrepr=True)
 
     # first of all, set up logging at the correct verbosity (and make the
     # verbosity available globally since it's needed for the progress indicator)
@@ -830,6 +841,20 @@ def main():
     tweet_text = config['TWITTER']['tweet_text']
     include_location_in_metadata = config['TWITTER']['include_location_in_metadata']
 
+    # override configured options with values supplied via the cli
+    if args.point:
+        point = tuple(map(float, args.point.split(",")))
+    if args.max_meters_per_pixel:
+        max_meters_per_pixel = args.max_meters_per_pixel
+    if args.width:
+        width = args.width
+    if args.height:
+        height = args.height
+    if args.image_width:
+        image_width = args.image_width
+    if args.image_height:
+        image_height = args.image_height
+
     ############################################################################
 
     LOGGER.info("Processing configuration...")
@@ -843,9 +868,9 @@ def main():
     if "{google_maps_version}" in tile_url_template:
         LOGGER.info("Determining current Google Maps version and patching tile URL template...")
 
-        # automatic fallback: current as of April 2021, will likely continue
+        # automatic fallback: current as of July 2021, will likely continue
         # to work for at least a while
-        google_maps_version = '899'
+        google_maps_version = '904'
 
         try:
             google_maps_page = requests.get("https://www.google.com/maps/", headers={'User-Agent': USER_AGENT}).content
