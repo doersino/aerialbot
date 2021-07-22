@@ -306,7 +306,8 @@ class MapTile:
         """
         Returns a MapTileGrid of the area covered by this map tile, but zoomed
         by zoom_delta. This works this way because by increasing the zoom level
-        by 1, a tile's area is subdivided into 4 quadrants."""
+        by 1, a tile's area is subdivided into 4 quadrants.
+        """
 
         zoom = self.zoom + zoom_delta
         fac = (2 ** zoom_delta)
@@ -333,7 +334,8 @@ class MapTile:
         """
         Downloads a tile image. Sets the status to ERROR if things don't work
         out for whatever reason. Finally, writes the image to the cache if
-        enabled."""
+        enabled.
+        """
 
         self.status = MapTileStatus.DOWNLOADING
 
