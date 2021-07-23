@@ -51,7 +51,7 @@ class WebMercator:
         here.
         """
 
-        factor = (TILE_SIZE / (2 * math.pi)) * 2 ** (zoom - 8)  # -8 because 256 = 2^8
+        factor = (1 / (2 * math.pi)) * 2 ** zoom
         x = factor * (math.radians(geopoint.lon) + math.pi)
         y = factor * (math.pi - math.log(math.tan((math.pi / 4) + (math.radians(geopoint.lat) / 2))))
         return (x, y)
