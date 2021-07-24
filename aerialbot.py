@@ -582,10 +582,6 @@ class MapTileGrid:
         with concurrent.futures.ThreadPoolExecutor(max_workers=threads) as executor:
             {executor.submit(maptile.load): maptile for maptile in tiles}
 
-        # finish up progress indicator
-        prog_thread.join()
-        prog.cleanup()
-
         # retry failed downloads if fewer than 2% of tiles are missing (happens
         # frequently when pulling from naver map)
         missing_tiles = [maptile for maptile in self.flat() if maptile.status == MapTileStatus.ERROR]
@@ -594,6 +590,10 @@ class MapTileGrid:
                 print("Retrying missing tiles...")
             for maptile in missing_tiles:
                 maptile.load()
+
+        # finish up progress indicator
+        prog_thread.join()
+        prog.cleanup()
 
         # check if we've got everything now
         missing_tiles = [maptile for maptile in self.flat() if maptile.status == MapTileStatus.ERROR]
