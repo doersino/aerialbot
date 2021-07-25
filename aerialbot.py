@@ -875,8 +875,8 @@ def main():
         google_maps_version = '904'
 
         try:
-            google_maps_page = requests.get("https://www.google.com/maps/", headers={'User-Agent': USER_AGENT}).content
-            match = re.search(rb'khms0\.google\.com\/kh\/v\\u003d([0-9]+)', google_maps_page)
+            google_maps_page = requests.get("https://maps.googleapis.com/maps/api/js", headers={"User-Agent": USER_AGENT}).content
+            match = re.search(rb"khms0\.googleapis\.com\/kh\?v=([0-9]+)", google_maps_page)
             if match:
                 google_maps_version = match.group(1).decode('ascii')
                 LOGGER.debug(google_maps_version)
