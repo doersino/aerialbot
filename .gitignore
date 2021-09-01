@@ -11,3 +11,4 @@ pyvenv.cfg
 lib64
 pip-selfcheck.json
 __pycache__
+.DS_Store
