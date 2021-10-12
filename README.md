@@ -21,6 +21,7 @@ Check out the following active ærialbot instances run by me...
 * 🗾 [@nihonmusuukei](https://twitter.com/nihonmusuukei) (*Nihon mu sū kei* = 日本無数景 ≈ 日本∞景, countless [views of Japan](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo)), which tweets a square kilometer of Japan every 12 hours.
 * 🇩🇪 [@zehnhektar](https://twitter.com/zehnhektar), which tweets a square sized 316×316 meters (*Zehn Hektar* = ten hectacres) somewhere in Germany every 12 hours.
 * 🌍 [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets a 5×5 km square every 6 hours.
+* 🌆 [@citiesatanangle](https://twitter.com/citiesatanangle), an instance that tweets tightly-zoomed 45-degree views of cities around the world every 8 hours.
 
 ...and others ([let me know](https://twitter.com/Doersino) if you want yours to be included):
 
