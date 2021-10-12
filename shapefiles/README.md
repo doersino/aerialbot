@@ -13,6 +13,7 @@ These shapefiles are from the following sources, their authors have mandated att
 | `world/` | [🔗](https://tapiquen-sig.jimdofree.com/english-version/free-downloads/world/) | Used `World_Countries.rar` | "Shape downloaded from http://tapiquen-sig.jimdo.com. Carlos Efraín Porto Tapiquén. Orogénesis Soluciones Geográficas. Porlamar, Venezuela, 2015." [📝](https://tapiquen-sig.jimdofree.com/english-version/free-downloads/world/) |
 | `denmark/` | [🔗](https://download.kortforsyningen.dk/content/danmarks-administrative-geografiske-inddeling-1500000) | Used `REGION.SHP` from `DAGI500_SHAPE_UTM32-EUREF89.zip` | "Source: Styrelsen for Dataforsyning og Effektivisering website  https://download.kortforsyningen.dk/content/danmarks-administrative-geografiske-inddeling-1500000" [📝](https://download.kortforsyningen.dk/content/danmarks-administrative-geografiske-inddeling-1500000) |
 | `thailand/` | [🔗](https://data.opendevelopmentmekong.net/en/dataset/thailand-country-boundary) | Used `tha_admbnda_adm0_rtsd_20190221.zip` | "Source: Open Development Mekong website  https://data.opendevelopmentmekong.net/en/dataset/thailand-country-boundary" [📝](https://data.opendevelopmentmekong.net/en/dataset/thailand-country-boundary) |
+| `newyorkcity/` | [🔗](https://data.cityofnewyork.us/City-Government/Borough-Boundaries/tqmj-j8zm) | Exported from website as shapefile | Public domain, "Data Provided By Department of City Planning (DCP)" |
 
 If you're looking for a shapefile of a country or region that's not provided here, have some advice:
 
