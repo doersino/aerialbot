@@ -7,7 +7,7 @@
 In a bit more detail, whenever you run ærialbot, it...
 
 * **loads a [shapefile](https://en.wikipedia.org/wiki/Shapefile)** from disk,
-* generates a **random point**꙳ within the bounds of this shape,
+* efficiently generates a **random point**꙳ within the bounds of this shape,
 * figures out **which map tiles need to be downloaded** to cover a certain area around the point in sufficient꙳ detail,
 * **downloads those map tiles** from a provider of your choice real fast (a threadpool is involved!),
 * **stitches** them together and **crops** the resulting image to precisely match the configured area,
@@ -34,14 +34,18 @@ Also check out [@earthacrosstime](https://twitter.com/earthacrosstime), a "sibli
 
 I've set up a [Twitter list](https://twitter.com/i/lists/1416308332529393672), enabling you to check out (and perhaps follow) all of them.
 
-![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example.jpg)
+![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example1.jpg)
+
+![](example2.jpg)
+
+*Tweeting can be disabled, meaning that this tool can serve as a high-resolution map downloader in a pinch. It newly – as of October 2021 – supports the 45-degree imagery available on Google Maps, such as this view of Barcleona, centered on the Basílica de la Sagrada Família.*
 
 
 ## Features
 
 Here's why ærialbot is a [Good Bot](https://www.reddit.com/r/OutOfTheLoop/comments/6oca11/what_is_up_with_good_bot_bad_bot_comments/):
 
-* **Configurability:** Take a look at `config.sample.ini` – you can supply your own shapefile (or instead define a fixed point), control output verbosity, set a different map tile provider, define the filenames of the result images, scale them to your preferred size, define the text of the tweet, and more!
+* **Configurability:** Take a look at `config.sample.ini` – you can supply your own shapefile (or instead define a fixed point), control output verbosity, set a different map tile provider (there's a bunch of presets, including oblique views), define the filenames of the result images, scale them to your preferred size, define the text of the tweet, and more!
 * ꙳**Correctness:** Because neighboring meridians are closer at the poles than at the equator, uniformly sampling the allowable range of latitudes would bias the generated random points toward the poles. Instead, ærialbot makes sure they are distributed with regard to surface area. For the same reason (plus the Mercator projection), the number of map tiles required to cover an area depends on the latitude – ærialbot accounts for this, too.
 * ꙳**Automatic zoom level determination:** Simply define the dimensions of the desired area around the generated point – ærialbot will then take care of dialing in a (more than) sufficient zoom level.
 * **Comes with batteries included:** The `shapefiles/` directory contains a number of shapefiles to get you started, along with a guide on preparing further shapefiles for use with ærialbot.
@@ -74,6 +78,8 @@ $ pip3 install -r requirements.txt
 Copy `config.sample.ini` to `config.ini` (via `cp config{.sample,}.ini` for some [Unix wizard vibes](https://twitter.com/thingskatedid/status/1391362019245260801) or just with your file manager like us normals), open it and modify it based on the (admittedly wordy) instructions in the comments.
 
 See `shapefiles/README.md` for advice regarding finding shapefiles of the region you're interested in and preparing them for use with ærialbot.
+
+*Feel free to [file an issue](https://github.com/doersino/aerialbot/issues) if anything's unclear!*
 
 
 ### Running
