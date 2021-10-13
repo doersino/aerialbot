@@ -37,8 +37,8 @@ If you're looking for a shapefile of a country or region that's not provided her
 Most of these Shapefiles have been processed to fit ærialbot's needs, which are
 
 1. that they contain a single layer
-2. with a single record
-3. of type `POLYGON`
+2. with one or more records/shapes
+3. each of type `POLYGON`
 4. whose points are notated as longitude-latitude pairs (CRS: `+proj=longlat`).
 
 In order to coerce the original versions of the shapefiles (which are kept in `orig/` subdirectories just in case future changes are required) to match these conventions, the excellent [mapshaper web interface](https://mapshaper.org) was used as follows.
@@ -47,15 +47,17 @@ In order to coerce the original versions of the shapefiles (which are kept in `o
 2. Simplify to desired level (depends on input granularity, often around 10%) with visual slider tool – on the [command line](https://github.com/mbloch/mapshaper/wiki/Command-Reference), this could be achieved via the `-simplify` flag.
 3. If polygon overlaps are present: `mapshaper -clean`.
 4. Fix projection if required (run `mapshaper info` to check) via `mapshaper -proj crs=wgs84 target=LAYER_NAME` (the important bit is `+proj=longlat`, which is implied by `wgs84`).
-5. If it's a polyline (run `mapshaper info` to check): `mapshaper -polygon`.
+5. If it's a polyline (run `mapshaper info` to check): `mapshaper -polygons`.
 6. Optionally: Remove features/regions you don't want (like Antarctica or large bodies of water, for example) via the visual tools.
-7. Turn all features/states/provinces/counties into a single feature: `mapshaper -dissolve`.
+7. ~~Turn all features/states/provinces/counties into a single feature: `mapshaper -dissolve`.~~
+ *This used to be required – for simplicity's sake, ærialbot only supported single-shape Shapefiles in its infancy, but setting up [@citiesatanangle](https://twitter.com/citiesatanangle) required adding support for multiple shapes. Turns out: Due to implementation details, random point generation is almost always more efficient for multi-shape Shapefiles!*
 8. Export.
 
 Some useful exploration steps using `pyshp` in the Python REPL:
 
 ```python
 >>> import shapefile
+>>> sf = shapefile.Reader(INSERT_SHAPEFILE_PATH_HERE)
 >>> shapes = sf.shapes()
 >>> len(shapes)
 1

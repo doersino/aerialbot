@@ -333,49 +333,121 @@ class GeoRect:
 
         return cls(southwest, northeast)
 
+    def area(self):
+        """Surface area in square kilometers."""
+
+        earth_radius = EARTH_CIRCUMFERENCE / (1000 * 2 * math.pi)
+        earth_surface_area_in_km = 4 * math.pi * earth_radius ** 2
+
+        # compute the area of the "band" one can imagine to be formed by the
+        # north and south latitudes via subtraction of the two spherical caps
+        # implied by the two latitudes, via:
+        # https://en.wikipedia.org/wiki/Spherical_cap#Surface_area_bounded_by_parallel_disks
+        spherical_cap_difference = (2 * math.pi * earth_radius ** 2) * abs(math.sin(math.radians(self.sw.lat)) - math.sin(math.radians(self.ne.lat)))
+
+        # then constrain that to the relevant longitude range, via:
+        # http://blog.sina.com.cn/s/blog_3d9064a40100v4vr.html
+        area = spherical_cap_difference * (self.ne.lon - self.sw.lon) / 360
+
+        # and perform some (probably unnecessary, but they sure helped uncover
+        # some errors during initial implementation) checks
+        assert area > 0 and area <= spherical_cap_difference and area <= earth_surface_area_in_km
+
+        return area
+
 
 class GeoShape:
     """
     This class is where shapefiles (of the form detailed in the config example,
-    i.e. containing one layer with one polygon shape with lon/lat coordinates)
-    are loaded and queried. Note that shapefiles use (lon, lat) coordinates,
-    which are sequestered to this class only.
+    i.e. containing one layer with one or more polygon shapes with lon/lat
+    coordinates) are loaded and queried. Note that shapefiles use (lon, lat)
+    coordinates (not: (lat, lon)), which are sequestered to this class only.
     """
 
     def __init__(self, shapefile_path):
 
         sf = shapefile.Reader(shapefile_path)
-        shapes = sf.shapes()
+        self.shapes = sf.shapes()
 
-        assert len(shapes) == 1
-        assert shapes[0].shapeTypeName == 'POLYGON'
-
-        self.outline = shapes[0]
-
-    def contains(self, geopoint):
-        """Does the shape contain the point?"""
-
-        point = geopoint.to_shapely_point()
-        polygon = shapely.geometry.shape(self.outline)
-        return polygon.contains(point)
+        # sanity checks
+        assert len(self.shapes) > 0
+        assert all([shape.shapeTypeName == 'POLYGON' for shape in self.shapes])
 
     def random_geopoint(self):
         """
         A random geopoint, using rejection sampling to make sure it's
-        contained within the shape.
+        contained within the area delimited by the shapefile.
         """
 
-        bounds = GeoRect.from_shapefile_bbox(self.outline.bbox)
-        geopoint = GeoPoint.random(bounds)
+        # idea: if there were guaranteed to be only a single record/shape in the
+        # shapefile, we could simply determine its bounding box and continually
+        # generate a geopoint in that box (i.e. latitude/longitude range), then
+        # check whether it's inside or outside the shape, until that check
+        # returns true  – the initial release of this tool was indeed
+        # constrained to single-shape shapefiles for simplicity's sake. but that
+        # doesn't work well (i.e. it's slow) for complex and non-compact shapes
+        # (e.g. the usa including hawaii and other overseas territories) where
+        # "contains?" tests are expensive and fail many times until a geopoint
+        # is found. hence, this new approach which correctly works for multi-
+        # shape shapefiles (e.g. ones with one shape per state or major city):
+        # 1. randomly (weighted by surface area of bounding box) select a shape,
+        # then 2. generate a point in that shape's bounding box and check if
+        # it's in the shape (which is much cheaper than checking for a "union
+        # shape") - if so, great; if not, goto 1. note that randomly selecting
+        # shapes based on their bounding boxes favors non-compact shapes, but
+        # the higher miss chance during rejection sampling makes things even in
+        # the end (which is why it's "goto 1" above, not "goto 2")
 
+        # compute area for each shape and set up data structure
+        shapes_data = []
+        for shape in self.shapes:
+            bounds = GeoRect.from_shapefile_bbox(shape.bbox)
+            area = GeoRect.area(bounds)
+            shapes_data.append({
+                "outline": shape,
+                "bounds": bounds,
+                "area": area,
+                "area_relative_prefix_sum": 0
+            })
+
+        # compute relative/normalized prefix sum of shape areas – we'll use this
+        # as a cumulative distribution function to correctly (with probabilies
+        # relative to area) pick one of the shapes
+        total = sum([shape["area"] for shape in shapes_data])
+        area_prefix_sum = 0
+        for shape in shapes_data:
+            area_prefix_sum += shape["area"]
+            shape["area_relative_prefix_sum"] = area_prefix_sum / total
+
+        # while true (but with a maximum iteration count, just to avoid actually
+        # creating an infinite loop)...
         i = 0
-        while not self.contains(geopoint):
-            i += 1
-            if i > 250:
-                raise ValueError("cannot seem to find a point in the shape's bounding box that's within the shape – is your data definitely okay (it may well be if it's a bunch of spread-out islands)? if you're sure, you'll need to raise the iteration limit in this function")
-            geopoint = GeoPoint.random(bounds)
+        while i < 250:
 
-        return geopoint
+            # ...randomly pick a shape...
+            area_relative_prefix_sum = random.random()
+            shape = None
+            for shape_candidate in shapes_data:
+                if area_relative_prefix_sum < shape_candidate["area_relative_prefix_sum"]:
+                    shape = shape_candidate
+                    break
+
+            # ...randomly generate a geopoint in its bounding box...
+            geopoint = GeoPoint.random(shape["bounds"])
+
+            # ...check if it's inside the shape...
+            point = geopoint.to_shapely_point()
+            polygon = shapely.geometry.shape(shape["outline"])
+            contains = polygon.contains(point)
+
+            # ... if so, great...
+            if contains:
+                return geopoint
+
+            # ...else, try again...
+
+        # ...or throw an error after a lot of unsuccessful tries.
+        raise ValueError("cannot seem to find a point in the shape's bounding box that's within the shape – is your data definitely okay (it may well be if it's a bunch of spread-out islands)? if you're sure, you'll need to raise the iteration limit in this function")
 
 
 class MapTileStatus:
@@ -1119,7 +1191,7 @@ def main():
     elif point is None:
         LOGGER.info("Loading shapefile...")
         LOGGER.debug(shapefile)
-        shape = GeoShape(shapefile)
+        shapes = GeoShape(shapefile)
 
     for tries in range(0, max_tries):
         if tries > max_tries:
@@ -1127,7 +1199,7 @@ def main():
 
         if point is None:
             LOGGER.info("Generating random point within shape...")
-            p = shape.random_geopoint()
+            p = shapes.random_geopoint()
         else:
             LOGGER.info("Using configured point instead of shapefile...")
             p = GeoPoint(point[0], point[1])
