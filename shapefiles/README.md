@@ -6,7 +6,7 @@ These shapefiles are from the following sources, their authors have mandated att
 
 | Folder | Source |  Notes | License/Attribution |
 | --- | --- | --- | --- |
-| `usa/` | [🔗](https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html) | Used `cb_2018_us_nation_5m.zip` | Public domain |
+| `usa/` | [🔗](https://www.census.gov/geographies/mapping-files/time-series/geo/carto-boundary-file.html) | Used `cb_2018_us_state_5m.zip` | Public domain |
 | `southkorea/` | [🔗](https://github.com/southkorea/southkorea-maps/blob/master/kostat/2012/shp/skorea-provinces-2012.shp) | Used `kostat/2012/shp/skorea-provinces-2012.shp` | "Free to share or remix" [📝](https://github.com/southkorea/southkorea-maps#license) |
 | `germany/` | [🔗](https://gdz.bkg.bund.de/index.php/default/catalog/product/view/id/766/s/gebietseinheiten-1-2-500-000-ge2500/category/8/?___store=default) | Used `ge2500.gk3.shape.zip` | "Datenlizenz Deutschland – Namensnennung – Version 2.0" [📝](https://www.govdata.de/dl-de/by-2-0) |
 | `japan/` | [🔗](https://www.gsi.go.jp/kankyochiri/gm_japan_e.html) |  Used `coastl_jpn.shp` from `gm-jpn-all_u_2_2.zip` | "Source: Geospatial Information Authority of Japan website (https://www.gsi.go.jp/kankyochiri/gm_japan_e.html)" [📝](https://www.gsi.go.jp/ENGLISH/page_e30286.html) |
@@ -49,9 +49,10 @@ In order to coerce the original versions of the shapefiles (which are kept in `o
 4. Fix projection if required (run `mapshaper info` to check) via `mapshaper -proj crs=wgs84 target=LAYER_NAME` (the important bit is `+proj=longlat`, which is implied by `wgs84`).
 5. If it's a polyline (run `mapshaper info` to check): `mapshaper -polygons`.
 6. Optionally: Remove features/regions you don't want (like Antarctica or large bodies of water, for example) via the visual tools.
-7. ~~Turn all features/states/provinces/counties into a single feature: `mapshaper -dissolve`.~~
+7. Optionally: Remove any extraneous data: `mapshaper -drop fields=*`.
+8. ~~Turn all features/states/provinces/counties into a single feature: `mapshaper -dissolve`.~~
  *This used to be required – for simplicity's sake, ærialbot only supported single-shape Shapefiles in its infancy, but setting up [@citiesatanangle](https://twitter.com/citiesatanangle) required adding support for multiple shapes. Turns out: Due to implementation details, random point generation is almost always more efficient for multi-shape Shapefiles!*
-8. Export.
+9. Export.
 
 Some useful exploration steps using `pyshp` in the Python REPL:
 
