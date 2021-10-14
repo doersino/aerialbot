@@ -1308,7 +1308,8 @@ def main():
             osm_url=osm_url,
             googlemaps_url=googlemaps_url,
             location_full_name=location_full_name,
-            location_country=location_country
+            location_country=location_country,
+            location_globe_emoji="🌎" if p.lon < -30 else "🌍" if p.lon < 60 else "🌏"
         )
         LOGGER.debug(tweet_text)
         if include_location_in_metadata:
