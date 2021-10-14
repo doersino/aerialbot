@@ -373,6 +373,10 @@ class GeoShape:
         assert len(self.shapes) > 0
         assert all([shape.shapeTypeName == 'POLYGON' for shape in self.shapes])
 
+        # data structure used for random shape selection, will be set up during
+        # the first call of the random_geopoint function
+        self.shapes_data = None
+
     def random_geopoint(self):
         """
         A random geopoint, using rejection sampling to make sure it's
@@ -398,36 +402,41 @@ class GeoShape:
         # the higher miss chance during rejection sampling makes things even in
         # the end (which is why it's "goto 1" above, not "goto 2")
 
-        # compute area for each shape and set up data structure
-        shapes_data = []
-        for shape in self.shapes:
-            bounds = GeoRect.from_shapefile_bbox(shape.bbox)
-            area = GeoRect.area(bounds)
-            shapes_data.append({
-                "outline": shape,
-                "bounds": bounds,
-                "area": area,
-                "area_relative_prefix_sum": 0
-            })
+        # don't repeat the setup work if it's been done before
+        if self.shapes_data is None:
 
-        # compute relative/normalized prefix sum of shape areas – we'll use this
-        # as a cumulative distribution function to correctly (with probabilies
-        # relative to area) pick one of the shapes
-        total = sum([shape["area"] for shape in shapes_data])
-        area_prefix_sum = 0
-        for shape in shapes_data:
-            area_prefix_sum += shape["area"]
-            shape["area_relative_prefix_sum"] = area_prefix_sum / total
+            # compute area for each shape and set up data structure
+            self.shapes_data = []
+            for shape in self.shapes:
+                bounds = GeoRect.from_shapefile_bbox(shape.bbox)
+                area = GeoRect.area(bounds)
+                self.shapes_data.append({
+                    "outline": shape,
+                    "bounds": bounds,
+                    "area": area,
+                    "area_relative_prefix_sum": 0
+                })
+
+            # compute relative/normalized prefix sum of shape areas – we'll use
+            # this as a cumulative distribution function to correctly (with
+            # probabilies relative to area) pick one of the shapes
+            total = sum([shape["area"] for shape in self.shapes_data])
+            area_prefix_sum = 0
+            for shape in self.shapes_data:
+                area_prefix_sum += shape["area"]
+                shape["area_relative_prefix_sum"] = area_prefix_sum / total
 
         # while true (but with a maximum iteration count, just to avoid actually
         # creating an infinite loop)...
         i = 0
         while i < 250:
 
-            # ...randomly pick a shape...
+            # ...randomly pick a shape (it'd technically be faster to use binary
+            # search or something here, but it's not a bottleneck in practice,
+            # even for shapefiles with 10k shapes)...
             area_relative_prefix_sum = random.random()
             shape = None
-            for shape_candidate in shapes_data:
+            for shape_candidate in self.shapes_data:
                 if area_relative_prefix_sum < shape_candidate["area_relative_prefix_sum"]:
                     shape = shape_candidate
                     break
