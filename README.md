@@ -7,7 +7,7 @@
 In a bit more detail, whenever you run ærialbot, it...
 
 * **loads a [shapefile](https://en.wikipedia.org/wiki/Shapefile)** from disk,
-* generates a **random point**꙳ within the bounds of this shape,
+* efficiently generates a **random point**꙳ within the bounds of this shape,
 * figures out **which map tiles need to be downloaded** to cover a certain area around the point in sufficient꙳ detail,
 * **downloads those map tiles** from a provider of your choice real fast (a threadpool is involved!),
 * **stitches** them together and **crops** the resulting image to precisely match the configured area,
@@ -21,6 +21,7 @@ Check out the following active ærialbot instances run by me...
 * 🗾 [@nihonmusuukei](https://twitter.com/nihonmusuukei) (*Nihon mu sū kei* = 日本無数景 ≈ 日本∞景, countless [views of Japan](https://en.wikipedia.org/wiki/One_Hundred_Famous_Views_of_Edo)), which tweets a square kilometer of Japan every 12 hours.
 * 🇩🇪 [@zehnhektar](https://twitter.com/zehnhektar), which tweets a square sized 316×316 meters (*Zehn Hektar* = ten hectacres) somewhere in Germany every 12 hours.
 * 🌍 [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets a 5×5 km square every 6 hours.
+* 🌆 [@citiesatanangle](https://twitter.com/citiesatanangle), an instance that tweets tightly-zoomed 45-degree views of (sub)urban areas around the world every 8 hours.
 
 ...and others ([let me know](https://twitter.com/Doersino) if you want yours to be included):
 
@@ -34,14 +35,18 @@ Also check out [@earthacrosstime](https://twitter.com/earthacrosstime), a "sibli
 
 I've set up a [Twitter list](https://twitter.com/i/lists/1416308332529393672), enabling you to check out (and perhaps follow) all of them.
 
-![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example.jpg)
+![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example1.jpg)
+
+![](example2.jpg)
+
+*Tweeting can be disabled, meaning that this tool can serve as a high-resolution map downloader in a pinch. It newly – as of October 2021 – supports the 45-degree imagery available on Google Maps, such as this view of Barcleona, centered on the Basílica de la Sagrada Família.*
 
 
 ## Features
 
 Here's why ærialbot is a [Good Bot](https://www.reddit.com/r/OutOfTheLoop/comments/6oca11/what_is_up_with_good_bot_bad_bot_comments/):
 
-* **Configurability:** Take a look at `config.sample.ini` – you can supply your own shapefile (or instead define a fixed point), control output verbosity, set a different map tile provider, define the filenames of the result images, scale them to your preferred size, define the text of the tweet, and more!
+* **Configurability:** Take a look at `config.sample.ini` – you can supply your own shapefile (or instead define a fixed point), control output verbosity, set a different map tile provider (there's a bunch of presets, including oblique views), define the filenames of the result images, scale them to your preferred size, define the text of the tweet, and more!
 * ꙳**Correctness:** Because neighboring meridians are closer at the poles than at the equator, uniformly sampling the allowable range of latitudes would bias the generated random points toward the poles. Instead, ærialbot makes sure they are distributed with regard to surface area. For the same reason (plus the Mercator projection), the number of map tiles required to cover an area depends on the latitude – ærialbot accounts for this, too.
 * ꙳**Automatic zoom level determination:** Simply define the dimensions of the desired area around the generated point – ærialbot will then take care of dialing in a (more than) sufficient zoom level.
 * **Comes with batteries included:** The `shapefiles/` directory contains a number of shapefiles to get you started, along with a guide on preparing further shapefiles for use with ærialbot.
@@ -74,6 +79,8 @@ $ pip3 install -r requirements.txt
 Copy `config.sample.ini` to `config.ini` (via `cp config{.sample,}.ini` for some [Unix wizard vibes](https://twitter.com/thingskatedid/status/1391362019245260801) or just with your file manager like us normals), open it and modify it based on the (admittedly wordy) instructions in the comments.
 
 See `shapefiles/README.md` for advice regarding finding shapefiles of the region you're interested in and preparing them for use with ærialbot.
+
+*Feel free to [file an issue](https://github.com/doersino/aerialbot/issues) if anything's unclear!*
 
 
 ### Running
@@ -131,6 +138,7 @@ Possibly. Please feel free to [file an issue](https://github.com/doersino/aerial
 * Maybe split `aerialbot.py` up into multiple modules, take inspiration from [here](https://github.com/joaquinlpereyra/twitterImgBot). This might not be required right now, but would help if any of the ideas listed below are implemented.
 * Add an option to use [OSM/Nominatim](https://nominatim.org/release-docs/develop/api/Reverse/) for reverse geocoding. This could go along with a refactor where a `ReverseGeocoder` interface is introduced, which two classes `TwitterReverseGeocoder` (with a constructor taking the Twitter credentials) and `OsmReverseGeocoder` implement. The config file would have to be extended with a reverse geocoder selection option, plus a reverse geocode string template and an explanation of the available variables (which may differ depending on the selected geocoder). This reverse geocode string would then be referencable in the tweet template.
 * In addition to `GeoShape.random_geopoint`, also implement a `Shape.random_edge_geopoint` function for generating points on the edge of polygons (and polylines), and make it available via a config setting. This would 1. help test whether a given shapefile is accurate (and whether its projection is suitable), and 2. enable tweeting images of coasts or border regions, which might be interesting. Random point selection on polygon outlines would need to be done by randomly picking a segment of the outline via a distribution based on a prefix sum of the haversine distances along the outlines, then uniformly picking a point along the chosen segment (or linearly interpolating).
-* Similarly, if a shapefile with (multi)points instead of a polygon or polyline is given, randomly select a location among those points. This could be used to set up a Twitter bot that tweets landmarks belonging to a certain category around the world (if such data is publicly available, that is – I'm sure [OSM data](https://wiki.openstreetmap.org/wiki/Shapefiles) could be [filtered](https://github.com/osmcode/pyosmium/blob/master/examples/filter_coastlines.py) accordingly).
+* Similarly, if a shapefile with (multi)points instead of a polygon or polyline is given, randomly select a location among those points. This could be used to set up a Twitter bot that tweets landmarks belonging to a certain category around the world (if such data is publicly available, that is – I'm sure [OSM data](https://wiki.openstreetmap.org/wiki/Shapefiles) could be [filtered](https://github.com/osmcode/pyosmium/blob/master/examples/filter_coastlines.py) accordingly). For example: [Airports](https://airports-list.com/iata-code).
+* Support Bing Maps as a tile source. That'd involve parametrizing how map tiles are accessed since Bing Maps doesn't use the x-y-z coordinate system favored by most every other service, instead employing [its own "Quadkeys" tile indexing approach](https://docs.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system) which essentially encodes a path along a quad tree.
 * Enable ærialbot to generate side views of areas with elevation data using [rayshader](https://www.tylermw.com/a-step-by-step-guide-to-making-3d-maps-with-satellite-imagery-in-r/). This would look super neat, but elevation data is probably not available at the required level of detail for most regions of the world, and I'm not sure if the available satellite imagery is aligned with reality well enough for this to look good. Probably not worth the effort.
 * Build an [ambient device](https://en.wikipedia.org/wiki/Ambient_device), probably based around a Raspberry Pi and a square display like [this one](https://shop.pimoroni.com/products/hyperpixel-4-square?variant=30138251444307), that runs a variant of ærialbot that would download and display a new image (plus metadata) every time the user taps the screen or presses a button. It could be called "πinthesky" or something even more terrible. Basically, I envision this device to take the shape of a small wooden box sitting on a shelf or mantle. (I almost certainly won't build this because I've got enough screens in my life – so feel free to steal this idea under the condition of sending me a picture of the end result!)

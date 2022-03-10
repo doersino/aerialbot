@@ -16,6 +16,8 @@ import traceback
 import concurrent.futures
 import threading
 
+import hashlib
+
 import requests
 
 from configobj import ConfigObj
@@ -38,6 +40,58 @@ LOGGER = None
 VERBOSITY = None
 
 
+class ViewDirection:
+    """
+    Keeps track of the selected view direction.
+    """
+
+    def __init__(self, direction):
+        """
+        The numbers (apart from '-1') are the view angles required for
+        querying Google Maps - they're directly accessed during URL building for
+        tile download.
+        """
+
+        self.angle = -1
+        if direction == "downward":
+            pass
+        elif direction == "northward":
+            self.angle = 0
+        elif direction == "eastward":
+            self.angle = 90
+        elif direction == "southward":
+            self.angle = 180
+        elif direction == "westward":
+            self.angle = 270
+        else:
+            raise ValueError(f"not a recognized view direction: {direction}")
+
+        self.direction = direction
+
+    def __repr__(self):
+        return f"ViewDirection({self.direction})"
+
+    def __str__(self):
+        return self.direction
+
+    def is_downward(self):
+        return self.angle == -1
+
+    def is_oblique(self):
+        return not self.is_downward()
+
+    def is_northward(self):
+        return self.angle == 0
+
+    def is_eastward(self):
+        return self.angle == 90
+
+    def is_southward(self):
+        return self.angle == 180
+
+    def is_westward(self):
+        return self.angle == 270
+
 class WebMercator:
     """Various functions related to the Web Mercator projection."""
 
@@ -54,6 +108,60 @@ class WebMercator:
         factor = (1 / (2 * math.pi)) * 2 ** zoom
         x = factor * (math.radians(geopoint.lon) + math.pi)
         y = factor * (math.pi - math.log(math.tan((math.pi / 4) + (math.radians(geopoint.lat) / 2))))
+        return (x, y)
+
+class ObliqueWebMercator:
+    """
+    Various functions related to the Oblique Web Mercator projection as used for
+    the 45 degree views available on Google Maps. The key (during projection) is
+    dividing the y coordinate's distance from the equator by √2 to account for
+    the foreshortening inherent in a 45 degree view - there's simply fewer
+    vertical than horizontal pixels when viewing, say, a 1km square at a 45
+    degree angle. Another variable that comes into play here (and not for the
+    standard Web Mercator projection) is the direction your're looking (0
+    degrees for northwards, i.e. the "camera" is south of what it's looking at,
+    90 degrees for eastwards/rightwards, etc. clockwise) – here, the indexing
+    of the tiles changes such that "up" remains towards decreasing y and "left"
+    remains towards decreasing x.
+    Complicated, I know, but at least *you* didn't need to reverse-engineer this
+    from minified JavaScript code found in the shallows of the Internet Archive!
+    """
+
+    @staticmethod
+    def project(geopoint, zoom, direction):
+        """
+        An implementation of the Oblique Web Mercator projection that returns
+        floats. That's required for cropping of stitched-together tiles such
+        that they only show the configured area, hence no use of math.floor
+        here. Based on the Web Mercator projection, with corrections for
+        obliqueness.
+        """
+
+        x0, y0 = WebMercator.project(geopoint, zoom)
+
+        width_and_height_of_world_in_tiles = 2 ** zoom
+        equator_offset_from_edges = width_and_height_of_world_in_tiles / 2
+
+        # fiddle with tile coordinates depending on view direction
+        x, y = x0, y0
+        if direction.is_northward():
+            pass
+        elif direction.is_eastward():
+            x = y0
+            y = width_and_height_of_world_in_tiles - x0
+        elif direction.is_southward():
+            x = width_and_height_of_world_in_tiles - x0
+            y = width_and_height_of_world_in_tiles - y0
+        elif direction.is_westward():
+            x = width_and_height_of_world_in_tiles - y0
+            y = x0
+        else:
+            raise ValueError("direction must be one of 'northward', 'eastward', 'southward', or 'westward'")
+
+        # translate such that the equator is at y=0, account for foreshortening,
+        # then translate back
+        y = ((y - equator_offset_from_edges) / math.sqrt(2)) + equator_offset_from_edges
+
         return (x, y)
 
 class GeoPoint:
@@ -131,14 +239,16 @@ class GeoPoint:
 
         return cls(lat, lon)
 
-    def to_maptile(self, zoom):
+    def to_maptile(self, zoom, direction):
         """
         Conversion of this geopoint to a tile through application of the Web
         Mercator projection and flooring to get integer tile corrdinates.
         """
 
         x, y = WebMercator.project(self, zoom)
-        return MapTile(zoom, math.floor(x), math.floor(y))
+        if direction.is_oblique():
+            x, y = ObliqueWebMercator.project(self, zoom, direction)
+        return MapTile(zoom, direction, math.floor(x), math.floor(y))
 
     def to_shapely_point(self):
         """
@@ -223,49 +333,130 @@ class GeoRect:
 
         return cls(southwest, northeast)
 
+    def area(self):
+        """Surface area in square kilometers."""
+
+        earth_radius = EARTH_CIRCUMFERENCE / (1000 * 2 * math.pi)
+        earth_surface_area_in_km = 4 * math.pi * earth_radius ** 2
+
+        # compute the area of the "band" one can imagine to be formed by the
+        # north and south latitudes via subtraction of the two spherical caps
+        # implied by the two latitudes, via:
+        # https://en.wikipedia.org/wiki/Spherical_cap#Surface_area_bounded_by_parallel_disks
+        spherical_cap_difference = (2 * math.pi * earth_radius ** 2) * abs(math.sin(math.radians(self.sw.lat)) - math.sin(math.radians(self.ne.lat)))
+
+        # then constrain that to the relevant longitude range, via:
+        # http://blog.sina.com.cn/s/blog_3d9064a40100v4vr.html
+        area = spherical_cap_difference * (self.ne.lon - self.sw.lon) / 360
+
+        # and perform some (probably unnecessary, but they sure helped uncover
+        # some errors during initial implementation) checks
+        assert area > 0 and area <= spherical_cap_difference and area <= earth_surface_area_in_km
+
+        return area
+
 
 class GeoShape:
     """
     This class is where shapefiles (of the form detailed in the config example,
-    i.e. containing one layer with one polygon shape with lon/lat coordinates)
-    are loaded and queried. Note that shapefiles use (lon, lat) coordinates,
-    which are sequestered to this class only.
+    i.e. containing one layer with one or more polygon shapes with lon/lat
+    coordinates) are loaded and queried. Note that shapefiles use (lon, lat)
+    coordinates (not: (lat, lon)), which are sequestered to this class only.
     """
 
     def __init__(self, shapefile_path):
 
         sf = shapefile.Reader(shapefile_path)
-        shapes = sf.shapes()
+        self.shapes = sf.shapes()
 
-        assert len(shapes) == 1
-        assert shapes[0].shapeTypeName == 'POLYGON'
+        # sanity checks
+        assert len(self.shapes) > 0
+        assert all([shape.shapeTypeName == 'POLYGON' for shape in self.shapes])
 
-        self.outline = shapes[0]
-
-    def contains(self, geopoint):
-        """Does the shape contain the point?"""
-
-        point = geopoint.to_shapely_point()
-        polygon = shapely.geometry.shape(self.outline)
-        return polygon.contains(point)
+        # data structure used for random shape selection, will be set up during
+        # the first call of the random_geopoint function
+        self.shapes_data = None
 
     def random_geopoint(self):
         """
         A random geopoint, using rejection sampling to make sure it's
-        contained within the shape.
+        contained within the area delimited by the shapefile.
         """
 
-        bounds = GeoRect.from_shapefile_bbox(self.outline.bbox)
-        geopoint = GeoPoint.random(bounds)
+        # idea: if there were guaranteed to be only a single record/shape in the
+        # shapefile, we could simply determine its bounding box and continually
+        # generate a geopoint in that box (i.e. latitude/longitude range), then
+        # check whether it's inside or outside the shape, until that check
+        # returns true  – the initial release of this tool was indeed
+        # constrained to single-shape shapefiles for simplicity's sake. but that
+        # doesn't work well (i.e. it's slow) for complex and non-compact shapes
+        # (e.g. the usa including hawaii and other overseas territories) where
+        # "contains?" tests are expensive and fail many times until a geopoint
+        # is found. hence, this new approach which correctly works for multi-
+        # shape shapefiles (e.g. ones with one shape per state or major city):
+        # 1. randomly (weighted by surface area of bounding box) select a shape,
+        # then 2. generate a point in that shape's bounding box and check if
+        # it's in the shape (which is much cheaper than checking for a "union
+        # shape") - if so, great; if not, goto 1. note that randomly selecting
+        # shapes based on their bounding boxes favors non-compact shapes, but
+        # the higher miss chance during rejection sampling makes things even in
+        # the end (which is why it's "goto 1" above, not "goto 2")
 
+        # don't repeat the setup work if it's been done before
+        if self.shapes_data is None:
+
+            # compute area for each shape and set up data structure
+            self.shapes_data = []
+            for shape in self.shapes:
+                bounds = GeoRect.from_shapefile_bbox(shape.bbox)
+                area = GeoRect.area(bounds)
+                self.shapes_data.append({
+                    "outline": shape,
+                    "bounds": bounds,
+                    "area": area,
+                    "area_relative_prefix_sum": 0
+                })
+
+            # compute relative/normalized prefix sum of shape areas – we'll use
+            # this as a cumulative distribution function to correctly (with
+            # probabilies relative to area) pick one of the shapes
+            total = sum([shape["area"] for shape in self.shapes_data])
+            area_prefix_sum = 0
+            for shape in self.shapes_data:
+                area_prefix_sum += shape["area"]
+                shape["area_relative_prefix_sum"] = area_prefix_sum / total
+
+        # while true (but with a maximum iteration count, just to avoid actually
+        # creating an infinite loop)...
         i = 0
-        while not self.contains(geopoint):
-            i += 1
-            if i > 250:
-                raise ValueError("cannot seem to find a point in the shape's bounding box that's within the shape – is your data definitely okay (it may well be if it's a bunch of spread-out islands)? if you're sure, you'll need to raise the iteration limit in this function")
-            geopoint = GeoPoint.random(bounds)
+        while i < 250:
 
-        return geopoint
+            # ...randomly pick a shape (it'd technically be faster to use binary
+            # search or something here, but it's not a bottleneck in practice,
+            # even for shapefiles with 10k shapes)...
+            area_relative_prefix_sum = random.random()
+            shape = None
+            for shape_candidate in self.shapes_data:
+                if area_relative_prefix_sum < shape_candidate["area_relative_prefix_sum"]:
+                    shape = shape_candidate
+                    break
+
+            # ...randomly generate a geopoint in its bounding box...
+            geopoint = GeoPoint.random(shape["bounds"])
+
+            # ...check if it's inside the shape...
+            point = geopoint.to_shapely_point()
+            polygon = shapely.geometry.shape(shape["outline"])
+            contains = polygon.contains(point)
+
+            # ... if so, great...
+            if contains:
+                return geopoint
+
+            # ...else, try again...
+
+        # ...or throw an error after a lot of unsuccessful tries.
+        raise ValueError("cannot seem to find a point in the shape's bounding box that's within the shape – is your data definitely okay (it may well be if it's a bunch of spread-out islands)? if you're sure, you'll need to raise the iteration limit in this function")
 
 
 class MapTileStatus:
@@ -287,8 +478,9 @@ class MapTile:
     tile_path_template = None
     tile_url_template = None
 
-    def __init__(self, zoom, x, y):
+    def __init__(self, zoom, direction, x, y):
         self.zoom = zoom
+        self.direction = direction
         self.x = x
         self.y = y
 
@@ -297,21 +489,29 @@ class MapTile:
         self.image = None
         self.filename = None
         if (MapTile.tile_path_template):
-            self.filename = MapTile.tile_path_template.format(zoom=self.zoom, x=self.x, y=self.y)
+            self.filename = MapTile.tile_path_template.format(
+                angle_if_oblique=("" if self.direction.is_downward() else f"deg{self.direction.angle}"),
+                zoom=self.zoom,
+                x=self.x,
+                y=self.y,
+                hash=hashlib.sha256(MapTile.tile_url_template.encode("utf-8")).hexdigest()[:8]
+            )
 
     def __repr__(self):
-        return f"MapTile({self.zoom}, {self.x}, {self.y})"
+        return f"MapTile({self.zoom}, {self.direction}, {self.x}, {self.y})"
 
     def zoomed(self, zoom_delta):
         """
         Returns a MapTileGrid of the area covered by this map tile, but zoomed
         by zoom_delta. This works this way because by increasing the zoom level
-        by 1, a tile's area is subdivided into 4 quadrants.
+        by 1, a tile's area is subdivided into 4 quadrants. If zoom_delta is 0,
+        the returned MapTileGrid will only contain one element - this very map
+        tile.
         """
 
         zoom = self.zoom + zoom_delta
         fac = (2 ** zoom_delta)
-        return MapTileGrid([[MapTile(zoom, self.x * fac + x, self.y * fac + y)
+        return MapTileGrid([[MapTile(zoom, self.direction, self.x * fac + x, self.y * fac + y)
                              for y in range(0, fac)]
                              for x in range(0, fac)])
 
@@ -340,7 +540,12 @@ class MapTile:
         self.status = MapTileStatus.DOWNLOADING
 
         try:
-            url = MapTile.tile_url_template.format(x=self.x, y=self.y, zoom=self.zoom)
+            url = MapTile.tile_url_template.format(
+                angle=self.direction.angle,
+                x=self.x,
+                y=self.y,
+                zoom=self.zoom
+            )
             r = requests.get(url, headers={'User-Agent': USER_AGENT})
         except requests.exceptions.ConnectionError:
             self.status = MapTileStatus.ERROR
@@ -501,21 +706,34 @@ class MapTileGrid:
         return f"MapTileGrid({self.maptiles})"
 
     @classmethod
-    def from_georect(cls, georect, zoom):
+    def from_georect(cls, georect, zoom, direction):
         """Divides a GeoRect into a grid of map tiles."""
 
-        southwest = georect.sw.to_maptile(zoom)
-        northeast = georect.ne.to_maptile(zoom)
+        bottomleft = georect.sw.to_maptile(zoom, direction)
+        topright = georect.ne.to_maptile(zoom, direction)
+
+        # this swapping business is really only required when the direction is
+        # "eastward", "southward", or "westward" since in these cases, tile
+        # coordinates are rotated with respect to the "downward" or "northward"
+        # directions (where they match cardinal directions) – note that the
+        # alternative to this sorting step would be four cases (similar to how
+        # it's done in the ObliqueWebMercator.project function)
+        if bottomleft.x > topright.x:
+            bottomleft.x, topright.x = topright.x, bottomleft.x
+        if bottomleft.y < topright.y:
+            bottomleft.y, topright.y = topright.y, bottomleft.y
 
         maptiles = []
-        for x in range(southwest.x, northeast.x + 1):
+        for x in range(bottomleft.x, topright.x + 1):
             col = []
 
-            # it's correct to have northeast and southwest reversed here (with
-            # regard to the outer loop) since y axis of the tile coordinates
-            # points toward the south, while the latitude axis points due north
-            for y in range(northeast.y, southwest.y + 1):
-                maptile = MapTile(zoom, x, y)
+            # it's correct to have topright (i.e. "northeast" when direction is
+            # "downward" or "northward") and bottomleft (i.e. similarly
+            # "southwest") reversed here (with regard to the outer loop) since
+            # the y axis of the tile coordinates points toward the south, while the
+            # latitude axis points due north
+            for y in range(topright.y, bottomleft.y + 1):
+                maptile = MapTile(zoom, direction, x, y)
                 col.append(maptile)
             maptiles.append(col)
 
@@ -535,20 +753,18 @@ class MapTileGrid:
 
         return [maptile for col in self.maptiles for maptile in col]
 
-    def has_high_quality_imagery(self):
+    def has_high_quality_imagery(self, quality_check_delta):
         """
         Checks if the corners of the grid are available two levels more zoomed
         in, which should make sure that we're getting high-quality imagery at
         the original zoom level.
         """
 
-        zoom_delta = 2
-
         # since the at() function wraps around, [self.at(x, y) for x and y in
         # [0,-1]] selects the four corners of the grid, then for each of them a
         # "subgrid" is generated using .zoomed(), and for each of them, the
         # relevant corner is accessed through reuse of x and y
-        corners = [self.at(x, y).zoomed(zoom_delta).at(x, y) for x in [0, -1] for y in [0, -1]]
+        corners = [self.at(x, y).zoomed(quality_check_delta).at(x, y) for x in [0, -1] for y in [0, -1]]
 
         # check if they have all downloaded successfully
         all_good = True
@@ -622,23 +838,32 @@ class MapTileImage:
     def save(self, path, quality=90):
         self.image.save(path, quality=quality)
 
-    def crop(self, zoom, georect):
+    def crop(self, zoom, direction, georect):
         """
         Crops the image such that it really only covers the area within the
         input GeoRect. This function must only be called once per image.
         """
 
-        sw_x, sw_y = WebMercator.project(georect.sw, zoom)
-        ne_x, ne_y = WebMercator.project(georect.ne, zoom)
+        left, bottom = WebMercator.project(georect.sw, zoom)  # sw_x, sw_y
+        right, top = WebMercator.project(georect.ne, zoom)  # ne_x, ne_y
+        if direction.is_oblique():
+            left, bottom = ObliqueWebMercator.project(georect.sw, zoom, direction)
+            right, top = ObliqueWebMercator.project(georect.ne, zoom, direction)
+
+        # swapping (and naming) analogous to how/why it's done in
+        # MapTileGrid.from_georect
+        if left > right:
+            left, right = right, left
+        if bottom < top:
+            bottom, top = top, bottom
 
         # determine what we'll cut off
-        sw_x_crop = round(TILE_SIZE * (sw_x % 1))
-        sw_y_crop = round(TILE_SIZE * (1 - sw_y % 1))
-        ne_x_crop = round(TILE_SIZE * (1 - ne_x % 1))
-        ne_y_crop = round(TILE_SIZE * (ne_y % 1))
+        left_crop = round(TILE_SIZE * (left % 1))
+        bottom_crop = round(TILE_SIZE * (1 - bottom % 1))
+        right_crop = round(TILE_SIZE * (1 - right % 1))
+        top_crop = round(TILE_SIZE * (top % 1))
 
-        # left, top, right, bottom
-        crop = (sw_x_crop, ne_y_crop, ne_x_crop, sw_y_crop)
+        crop = (left_crop, top_crop, right_crop, bottom_crop)
 
         # snip snap
         self.image = ImageOps.crop(self.image, crop)
@@ -794,12 +1019,13 @@ def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--help', action='help', default=argparse.SUPPRESS, help=argparse._('show this help message and exit'))  # override default help argument so that only --help (and not -h) can call
     parser.add_argument('config_path', metavar='CONFIG_PATH', type=str, nargs='?', default="config.ini", help='config file to use instead of looking for config.ini in the current working directory')
-    parser.add_argument('-p', '--point', dest='point', metavar='LAT,LON', type=str, help='a point, e.g. \'37.453896,126.446829\', that will override your configuration (if its latitide is negative, option parsing might throw an error – simply write -p="LAT,LON" in that case)')  # https://stackoverflow.com/questions/16174992/cant-get-argparse-to-read-quoted-string-with-dashes-in-it
+    parser.add_argument('-p', '--point', dest='point', metavar='LAT,LON', type=str, help='a point, e.g. \'37.453896,126.446829\', that will override your configuration (if its latitude is negative, option parsing might throw an error – simply write -p="LAT,LON" in that case)')  # https://stackoverflow.com/questions/16174992/cant-get-argparse-to-read-quoted-string-with-dashes-in-it
     parser.add_argument('-m', '--max-meters-per-pixel', dest='max_meters_per_pixel', metavar='N', type=float, help='a maximum meters per pixel constraint that will override your configuration')
     parser.add_argument('-w', '--width', dest='width', metavar='N', type=float, help='width of the depicted area in meters, will override your configuration')
     parser.add_argument('-h', '--height', dest='height', metavar='N', type=float, help='height of the depicted area in meters, will override your configuration')
     parser.add_argument('--image_width', dest='image_width', metavar='N', type=float, help='width of the result image, will override your configuration (where you can also find an explanation of how this option interacts with the -m, -w, and -h options)')
     parser.add_argument('--image_height', dest='image_height', metavar='N', type=float, help='height of the result image, will override your configuration (where you can also find an explanation of how this option interacts with the -m, -w, and -h options)')
+    parser.add_argument('--direction', dest='direction_cli', type=str, choices=["northward", "eastward", "southward", "westward"], help='view direction (only applicable if the "googlemaps-oblique-random" tile url preset is selected in the config file; overrides the randomization)')
     args = parser.parse_args()
 
     # load configuration either from config.ini or from a user-supplied file
@@ -843,6 +1069,17 @@ def main():
     tweet_text = config['TWITTER']['tweet_text']
     include_location_in_metadata = config['TWITTER']['include_location_in_metadata']
 
+    # these were added post-initial-release and might not be specified in
+    # existing configuration files, so make sure to proceed with sensible
+    # defaults if not specified
+    max_tries = 10
+    if "max_tries" in config['GENERAL']:
+        max_tries = config['GENERAL']['max_tries']
+
+    quality_check_delta = 2
+    if "quality_check_delta" in config['GENERAL']:
+        quality_check_delta = config['GENERAL']['quality_check_delta']
+
     # override configured options with values supplied via the cli
     if args.point:
         point = tuple(map(float, args.point.split(",")))
@@ -856,33 +1093,55 @@ def main():
         image_width = args.image_width
     if args.image_height:
         image_height = args.image_height
+    direction_cli = None
+    if args.direction_cli:
+        direction_cli = args.direction_cli
 
     ############################################################################
 
     LOGGER.info("Processing configuration...")
 
-    # handle tile url special cases
+    # handle tile url special cases (i.e. presets)
+    direction = ViewDirection("downward")
     if tile_url_template == "googlemaps":
+        LOGGER.info("Using Google Maps preset...")
         tile_url_template = "https://khms2.google.com/kh/v={google_maps_version}?x={x}&y={y}&z={zoom}"
+    elif tile_url_template[:19] == "googlemaps-oblique-":
+        LOGGER.info("Using oblique Google Maps preset...")
+        direction = tile_url_template[19:]
+        if direction == "random":
+            if direction_cli is None:
+                LOGGER.info("Randomly picking view direction...")
+                direction = random.choice(["northward", "eastward", "southward", "westward"])
+                LOGGER.debug(direction)
+            else:
+                direction = direction_cli
+        direction = ViewDirection(direction)
+        tile_url_template = "https://khms1.googleapis.com/kh?v={google_maps_version}&deg={angle}&x={x}&y={y}&z={zoom}"
     elif tile_url_template == "navermap":
+        LOGGER.info("Using Naver Map preset...")
         tile_url_template = "https://map.pstatic.net/nrb/styles/satellite/{naver_map_version}/{zoom}/{x}/{y}.jpg?mt=bg"
 
     if "{google_maps_version}" in tile_url_template:
         LOGGER.info("Determining current Google Maps version and patching tile URL template...")
 
-        # automatic fallback: current as of July 2021, will likely continue
+        # automatic fallback: current as of October 2021, will likely continue
         # to work for at least a while
-        google_maps_version = '904'
+        google_maps_version = '908'
+        if direction.is_oblique():
+            google_maps_version = '131'
 
         try:
             google_maps_page = requests.get("https://maps.googleapis.com/maps/api/js", headers={"User-Agent": USER_AGENT}).content
-            match = re.search(rb"khms0\.googleapis\.com\/kh\?v=([0-9]+)", google_maps_page)
+            match = re.search(rb'null,\[\[\"https:\/\/khms0\.googleapis\.com\/kh\?v=([0-9]+)', google_maps_page)
+            if direction.is_oblique():
+                match = re.search(rb'\],\[\[\"https:\/\/khms0\.googleapis\.com\/kh\?v=([0-9]+)', google_maps_page)
             if match:
                 google_maps_version = match.group(1).decode('ascii')
                 LOGGER.debug(google_maps_version)
             else:
                 LOGGER.warning(f"Unable to extract current version, proceeding with outdated version {google_maps_version} instead.")
-        except requests.RequestException as e:
+        except requests.RequestException:
             LOGGER.warning(f"Unable to load Google Maps, proceeding with outdated version {google_maps_version} instead.")
 
         tile_url_template = tile_url_template.replace("{google_maps_version}", google_maps_version)
@@ -896,26 +1155,40 @@ def main():
     MapTile.tile_path_template = tile_path_template
     MapTile.tile_url_template = tile_url_template
 
+    # if obliquely looking eastwards or westwards, the height of the
+    # geographical area (where "height" = "latitude range" and "width" =
+    # "longitude range") must be swapped to match the intended dimensions of the
+    # imaged area
+    geowidth = width
+    geoheight = height
+    if direction.is_eastward() or direction.is_westward():
+        geowidth, geoheight = geoheight, geowidth
+
+    foreshortening_factor = 1
+    if direction.is_oblique():
+        foreshortening_factor = math.sqrt(2)
+
     # process max_meters_per_pixel setting
     if image_width is None and image_height is None:
         assert max_meters_per_pixel is not None
     elif image_height is None:
         max_meters_per_pixel = (max_meters_per_pixel or 1) * (width / image_width)
     elif image_width is None:
-        max_meters_per_pixel = (max_meters_per_pixel or 1) * (height / image_height)
+        max_meters_per_pixel = (max_meters_per_pixel or 1) * (height / image_height) / foreshortening_factor
     else:
+
         # if both are set, effectively use whatever imposes a tighter constraint
-        if width / image_width <= height / image_height:
+        if width / image_width <= (height / image_height) / foreshortening_factor:
             max_meters_per_pixel = (max_meters_per_pixel or 1) * (width / image_width)
         else:
-            max_meters_per_pixel = (max_meters_per_pixel or 1) * (height / image_height)
+            max_meters_per_pixel = (max_meters_per_pixel or 1) * (height / image_height) / foreshortening_factor
 
     # process image width and height for scaling
     if image_width is not None or image_height is not None:
         if image_height is None:
-            image_height = height * (image_width / width)
+            image_height = height * (image_width / width) / foreshortening_factor
         elif image_width is None:
-            image_width = width * (image_height / height)
+            image_width = width * (image_height / height) * foreshortening_factor
 
     # whether to enable or disable tweeting
     tweeting = all(x is not None for x in [consumer_key, consumer_secret, access_token, access_token_secret])
@@ -927,17 +1200,15 @@ def main():
     elif point is None:
         LOGGER.info("Loading shapefile...")
         LOGGER.debug(shapefile)
-        shape = GeoShape(shapefile)
+        shapes = GeoShape(shapefile)
 
-    tries = 0
-    while True:
-        tries += 1
-        if tries > 10:
+    for tries in range(0, max_tries):
+        if tries > max_tries:
             raise RuntimeError("too many retries – maybe there's no internet connection? either that, or your max_meters_per_pixel setting is too low")
 
         if point is None:
             LOGGER.info("Generating random point within shape...")
-            p = shape.random_geopoint()
+            p = shapes.random_geopoint()
         else:
             LOGGER.info("Using configured point instead of shapefile...")
             p = GeoPoint(point[0], point[1])
@@ -948,11 +1219,11 @@ def main():
         LOGGER.debug(zoom)
 
         LOGGER.info("Generating rectangle with your selected width and height around point...")
-        rect = GeoRect.around_geopoint(p, width, height)
+        rect = GeoRect.around_geopoint(p, geowidth, geoheight)
         LOGGER.debug(rect)
 
         LOGGER.info("Turning rectangle into a grid of map tiles at the required zoom level...")
-        grid = MapTileGrid.from_georect(rect, zoom)
+        grid = MapTileGrid.from_georect(rect, zoom, direction)
         LOGGER.debug(grid)
 
         # no need to do check quality if the point was set manually – clearly
@@ -961,8 +1232,8 @@ def main():
             break
 
         LOGGER.info("Checking quality of imagery available for the map tile grid...")
-        if not grid.has_high_quality_imagery():
-            LOGGER.info("Not good enough, let's try this again...")
+        if not grid.has_high_quality_imagery(quality_check_delta):
+            LOGGER.info(f"Not good enough, let's try this again (retry {tries})...")
         else:
             LOGGER.info("Lookin' good, let's proceed!")
             break
@@ -978,7 +1249,7 @@ def main():
 
     LOGGER.info("Cropping image to match the chosen area width and height...")
     LOGGER.debug((width, height))
-    image.crop(zoom, rect)
+    image.crop(zoom, direction, rect)
 
     if image_width is not None or image_height is not None:
         LOGGER.info("Scaling image...")
@@ -992,6 +1263,7 @@ def main():
     LOGGER.info("Saving image to disk...")
     image_path = image_path_template.format(
         datetime=datetime.today().strftime("%Y-%m-%dT%H.%M.%S"),
+        direction=direction,
         latitude=p.lat,
         longitude=p.lon,
         width=width,
@@ -1032,10 +1304,12 @@ def main():
             latitude=p.lat,
             longitude=p.lon,
             point_fancy=p.fancy(),
+            direction=direction,
             osm_url=osm_url,
             googlemaps_url=googlemaps_url,
             location_full_name=location_full_name,
-            location_country=location_country
+            location_country=location_country,
+            location_globe_emoji="🌎" if p.lon < -30 else "🌍" if p.lon < 60 else "🌏"
         )
         LOGGER.debug(tweet_text)
         if include_location_in_metadata:
