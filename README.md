@@ -73,6 +73,8 @@ $ pip3 install -r requirements.txt
 
 (To deactivate the virtual environment, run `deactivate`.)
 
+One of the dependencies, [Shapely](https://shapely.readthedocs.io/en/stable/manual.html), requires the [GEOS library](https://github.com/libgeos/geos) for performing operations on two-dimensional vector geometries, which you *may* need to install first as described [here](https://stackoverflow.com/questions/19742406/could-not-find-library-geos-c-or-load-any-of-its-variants).
+
 
 ### Configuration
 
