@@ -882,7 +882,7 @@ class MapTileImage:
 
         # Image.LANCZOS apparently provides the best quality, see
         # https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-filters
-        self.image = self.image.resize((round(width), round(height)), resample=Image.LANCZOS)
+        self.image = self.image.resize((round(width), round(height)), resample=Image.Resampling.LANCZOS)
 
     def enhance(self):
         """Slightly increases contrast and brightness."""
@@ -1096,9 +1096,9 @@ def main():
     include_location_in_metadata = config['TWITTER']['include_location_in_metadata']
 
     # workaround for old configuration files not containing a mastodon section
-    m_api_base_url = ""
-    m_access_token = ""
-    toot_text = ""
+    m_api_base_url = None
+    m_access_token = None
+    toot_text = None
     if 'MASTODON' in config:
         m_api_base_url = config['MASTODON']['api_base_url']
         m_access_token = config['MASTODON']['access_token']
