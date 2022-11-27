@@ -63,7 +63,7 @@ Here's why ærialbot is a [Good Bot](https://www.reddit.com/r/OutOfTheLoop/comme
 
 ### Setup
 
-Being a good [Python 3](https://www.python.org) citizen, ærialbot uses `venv` to avoid dependency hell. Run the following commands to get it installed on your system:
+Being a good [Python 3](https://www.python.org) citizen, ærialbot integrates with `venv` or similar packages to avoid dependency hell. Run the following commands to get it installed on your system:
 
 ```bash
 $ git clone https://github.com/doersino/aerialbot
