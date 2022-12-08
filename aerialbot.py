@@ -1326,7 +1326,7 @@ def main():
     osm_url = f"https://www.openstreetmap.org/#map={zoom}/{p.lat}/{p.lon}"
     googlemaps_url = f"https://www.google.com/maps/@{p.lat},{p.lon},{zoom}z"
     location_globe_emoji = "🌎" if p.lon < -30 else "🌍" if p.lon < 60 else "🌏"
-    area_size = f"{str(round(geowidth/1000, 2)).rstrip('0').rstrip('.')} × {str(round(geoheight/1000, 2)).rstrip('0').rstrip('.')} km"
+    area_size = f"{str(round(geowidth/1000, 2)).rstrip('0').rstrip('.')} × {str(round(geoheight/1000, 2)).rstrip('0').rstrip('.')} km"
     direction_capitalize = str(direction).capitalize()
 
     if tweeting:
