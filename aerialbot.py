@@ -1045,19 +1045,26 @@ class Tooter:
                 time.sleep(delay)
 
     def upload(self, path):
-        """Uploads an image or video to Mastodon, retrying three times on bad
-        gateway errors in case the server has a hiccup."""
+        """
+        Uploads an image or video to Mastodon, retrying up to three times in
+        case the server has a hiccup.
+        """
 
         def __do_upload__():
             return self.api.media_post(path, synchronous=True)
 
-        return self.__retry__(__do_upload__, Mastodon.MastodonBadGatewayError)
+        return self.__retry__(__do_upload__, Mastodon.MastodonError)
 
     def toot(self, text, media):
+        """
+        Posts a toot with media, retrying up to three times in case the server
+        has a hiccup.
+        """
+
         def __do_toot__():
             self.api.status_post(text, media_ids=[media.id])
 
-        self.__retry__(__do_toot__, Mastodon.MastodonBadGatewayError)
+        self.__retry__(__do_toot__, Mastodon.MastodonError)
 
 def main():
     global VERBOSITY
