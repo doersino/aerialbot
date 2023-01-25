@@ -29,7 +29,7 @@ from PIL import Image, ImageEnhance, ImageOps
 Image.MAX_IMAGE_PIXELS = None
 
 import tweepy
-from mastodon import Mastodon
+from mastodon import Mastodon, MastodonError
 
 
 TILE_SIZE = 256  # in pixels
@@ -1053,7 +1053,7 @@ class Tooter:
         def __do_upload__():
             return self.api.media_post(path, synchronous=True)
 
-        return self.__retry__(__do_upload__, Mastodon.MastodonError)
+        return self.__retry__(__do_upload__, MastodonError)
 
     def toot(self, text, media):
         """
@@ -1064,7 +1064,7 @@ class Tooter:
         def __do_toot__():
             self.api.status_post(text, media_ids=[media.id])
 
-        self.__retry__(__do_toot__, Mastodon.MastodonError)
+        self.__retry__(__do_toot__, MastodonError)
 
 def main():
     global VERBOSITY
