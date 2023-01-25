@@ -1029,13 +1029,35 @@ class Tooter:
             api_base_url = api_base_url
         )
 
-    def upload(self, path):
-        """Uploads an image to Mastodon."""
+    def __retry__(self, fn, exception, tries=3, delay=10):
+        """
+        Retries a function up to `tries` times every `delay` seconds until it
+        stops throwing `exception`.
+        """
 
-        return self.api.media_post(path, synchronous=True)
+        while tries > 0:
+            tries -= 1
+            try:
+                return fn()
+            except exception as e:
+                if tries == 0:
+                    raise e
+                time.sleep(delay)
+
+    def upload(self, path):
+        """Uploads an image or video to Mastodon, retrying three times on bad
+        gateway errors in case the server has a hiccup."""
+
+        def __do_upload__():
+            return self.api.media_post(path, synchronous=True)
+
+        return self.__retry__(__do_upload__, Mastodon.MastodonBadGatewayError)
 
     def toot(self, text, media):
-        self.api.status_post(text, media_ids=[media.id])
+        def __do_toot__():
+            self.api.status_post(text, media_ids=[media.id])
+
+        self.__retry__(__do_toot__, Mastodon.MastodonBadGatewayError)
 
 def main():
     global VERBOSITY
