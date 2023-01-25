@@ -1019,8 +1019,9 @@ class Tweeter:
 
 class Tooter:
     """
-    Basic class for tooting images, a simple wrapper around the relevant
-    functions of the Mastodon.py package.
+    Basic class for tooting images or videos, a simple wrapper around the
+    relevant functions of the Mastodon.py package, plus retrying.
+    (Identical in ærialbot, earthacrosstime, and sundryautomata.)
     """
 
     def __init__(self, api_base_url, access_token):
