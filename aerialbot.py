@@ -25,6 +25,8 @@ from configobj import ConfigObj
 import shapefile
 import shapely.geometry
 
+from geopy.geocoders import Nominatim
+
 from PIL import Image, ImageEnhance, ImageOps
 Image.MAX_IMAGE_PIXELS = None
 
@@ -979,19 +981,26 @@ class Tweeter:
         # for references, see:
         # http://docs.tweepy.org/en/latest/api.html#status-methods
         # https://developer.twitter.com/en/docs/tweets/post-and-engage/guides/post-tweet-geo-guide
-        auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+        # This part is dirty. Though Twitter moved to API v2, the media upload is still in API v1.1
+        # So we need to use both API v1.1 and v2
+        auth = tweepy.OAuth1UserHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
+        # API for API v1.1 access
         self.api = tweepy.API(auth)
+        # Client for API v2 access
+        self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret, access_token=access_token, access_token_secret=access_token_secret)
 
     def get_location(self, geopoint):
         full_name = ""
         country = ""
 
         try:
-            location = self.api.reverse_geocode(geopoint.lat, geopoint.lon)
-            if location:
-                full_name = location[0].full_name
-                country = location[0].country
+            # The API v2 has no reverse geocoding, so we use Nominatim instead
+            # TODO Make the Geo configurable for those without Geo access, use Nominatim
+            geolocator = Nominatim(user_agent="aerialbot")
+            location = geolocator.reverse((geopoint.lat, geopoint.lon), language='th')
+            full_name = location.address
+            country = location.raw['address']['country']
         except KeyError:
 
             # can apparently sometimes occur if twitter doesn't have geodata
@@ -1007,15 +1016,12 @@ class Tweeter:
 
     def tweet(self, text, media, geopoint=None):
         if geopoint:
-            self.api.update_status(
-                text,
-                media_ids=[media.media_id],
-                lat=geopoint.lat,
-                long=geopoint.lon,
-                display_coordinates=True
-            )
+            # Twitter API v1.1 moved Geo behide a paywall, so there is no way to embed the place_id to the tweet
+            # TODO Make the Geo configurable
+            self.client.create_tweet(text=text,media_ids=[media.media_id])
         else:
-            self.api.update_status(text, media_ids=[media.media_id])
+            #self.api.update_status(text, media_ids=[media.media_id])
+            self.client.create_tweet(text=text, media_ids=[media.media_id])
 
 class Tooter:
     """
