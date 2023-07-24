@@ -29,12 +29,18 @@ from PIL import Image, ImageEnhance, ImageOps
 Image.MAX_IMAGE_PIXELS = None
 
 import tweepy
+from mastodon import Mastodon, MastodonError
 
 
 TILE_SIZE = 256  # in pixels
 EARTH_CIRCUMFERENCE = 40075.016686 * 1000  # in meters, at the equator
 
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36"
+# Google Maps version to use if the current version cannot be determined, up to
+# date as of November 2022, will likely continue to work for at least a while
+GOOGLE_MAPS_VERSION_FALLBACK = '934'
+GOOGLE_MAPS_OBLIQUE_VERSION_FALLBACK = '148'
+
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15"
 
 LOGGER = None
 VERBOSITY = None
@@ -876,7 +882,7 @@ class MapTileImage:
 
         # Image.LANCZOS apparently provides the best quality, see
         # https://pillow.readthedocs.io/en/latest/handbook/concepts.html#concept-filters
-        self.image = self.image.resize((round(width), round(height)), resample=Image.LANCZOS)
+        self.image = self.image.resize((round(width), round(height)), resample=Image.Resampling.LANCZOS)
 
     def enhance(self):
         """Slightly increases contrast and brightness."""
@@ -1011,6 +1017,56 @@ class Tweeter:
         else:
             self.api.update_status(text, media_ids=[media.media_id])
 
+class Tooter:
+    """
+    Basic class for tooting images or videos, a simple wrapper around the
+    relevant functions of the Mastodon.py package, plus retrying.
+    (Identical in ærialbot, earthacrosstime, and sundryautomata.)
+    """
+
+    def __init__(self, api_base_url, access_token):
+        self.api = Mastodon(
+            access_token = access_token,
+            api_base_url = api_base_url
+        )
+
+    def __retry__(self, fn, exception, tries=3, delay=10):
+        """
+        Retries a function up to `tries` times every `delay` seconds until it
+        stops throwing `exception`.
+        """
+
+        while tries > 0:
+            tries -= 1
+            try:
+                return fn()
+            except exception as e:
+                if tries == 0:
+                    raise e
+                time.sleep(delay)
+
+    def upload(self, path):
+        """
+        Uploads an image or video to Mastodon, retrying up to three times in
+        case the server has a hiccup.
+        """
+
+        def __do_upload__():
+            return self.api.media_post(path, synchronous=True)
+
+        return self.__retry__(__do_upload__, MastodonError)
+
+    def toot(self, text, media):
+        """
+        Posts a toot with media, retrying up to three times in case the server
+        has a hiccup.
+        """
+
+        def __do_toot__():
+            self.api.status_post(text, media_ids=[media.id])
+
+        self.__retry__(__do_toot__, MastodonError)
+
 def main():
     global VERBOSITY
     global LOGGER
@@ -1061,15 +1117,24 @@ def main():
     apply_adjustments = config['IMAGE']['apply_adjustments']
     image_quality = config['IMAGE']['image_quality']
 
-    consumer_key = config['TWITTER']['consumer_key']
-    consumer_secret = config['TWITTER']['consumer_secret']
-    access_token = config['TWITTER']['access_token']
-    access_token_secret = config['TWITTER']['access_token_secret']
+    t_consumer_key = config['TWITTER']['consumer_key']
+    t_consumer_secret = config['TWITTER']['consumer_secret']
+    t_access_token = config['TWITTER']['access_token']
+    t_access_token_secret = config['TWITTER']['access_token_secret']
 
     tweet_text = config['TWITTER']['tweet_text']
     include_location_in_metadata = config['TWITTER']['include_location_in_metadata']
 
-    # these were added post-initial-release and might not be specified in
+    # workaround for old configuration files not containing a mastodon section
+    m_api_base_url = None
+    m_access_token = None
+    toot_text = None
+    if 'MASTODON' in config:
+        m_api_base_url = config['MASTODON']['api_base_url']
+        m_access_token = config['MASTODON']['access_token']
+        toot_text = config['MASTODON']['toot_text']
+
+    # these were also added post-initial-release and might not be specified in
     # existing configuration files, so make sure to proceed with sensible
     # defaults if not specified
     max_tries = 10
@@ -1125,11 +1190,11 @@ def main():
     if "{google_maps_version}" in tile_url_template:
         LOGGER.info("Determining current Google Maps version and patching tile URL template...")
 
-        # automatic fallback: current as of October 2021, will likely continue
-        # to work for at least a while
-        google_maps_version = '908'
+        # set to fallback initially, will be overwritten if current version can
+        # be determined
+        google_maps_version = GOOGLE_MAPS_VERSION_FALLBACK
         if direction.is_oblique():
-            google_maps_version = '131'
+            google_maps_version = GOOGLE_MAPS_OBLIQUE_VERSION_FALLBACK
 
         try:
             google_maps_page = requests.get("https://maps.googleapis.com/maps/api/js", headers={"User-Agent": USER_AGENT}).content
@@ -1191,7 +1256,10 @@ def main():
             image_width = width * (image_height / height) * foreshortening_factor
 
     # whether to enable or disable tweeting
-    tweeting = all(x is not None for x in [consumer_key, consumer_secret, access_token, access_token_secret])
+    tweeting = all(x is not None for x in [t_consumer_key, t_consumer_secret, t_access_token, t_access_token_secret])
+
+    # whether to enable or disable tooting
+    tooting = all(x is not None for x in [m_api_base_url, m_access_token])
 
     ############################################################################
 
@@ -1284,38 +1352,67 @@ def main():
 
     ############################################################################
 
+    # prep tweet/toot text variables
+    osm_url = f"https://www.openstreetmap.org/#map={zoom}/{p.lat}/{p.lon}"
+    googlemaps_url = f"https://www.google.com/maps/@{p.lat},{p.lon},{zoom}z"
+    location_globe_emoji = "🌎" if p.lon < -30 else "🌍" if p.lon < 60 else "🌏"
+    area_size = f"{str(round(geowidth/1000, 2)).rstrip('0').rstrip('.')} × {str(round(geoheight/1000, 2)).rstrip('0').rstrip('.')} km"
+    direction_capitalize = str(direction).capitalize()
+
     if tweeting:
         LOGGER.info("Connecting to Twitter...")
-        tweeter = Tweeter(consumer_key, consumer_secret, access_token, access_token_secret)
+        tweeter = Tweeter(t_consumer_key, t_consumer_secret, t_access_token, t_access_token_secret)
 
         #if "location_full_name" in tweet_text or "location_country" in tweet_text:
         LOGGER.info("Getting location information from Twitter...")
         (location_full_name, location_country) = tweeter.get_location(p)
         LOGGER.debug((location_full_name, location_country))
 
-        osm_url = f"https://www.openstreetmap.org/#map={zoom}/{p.lat}/{p.lon}"
-        googlemaps_url = f"https://www.google.com/maps/@{p.lat},{p.lon},{zoom}z"
-
         LOGGER.info("Uploading image to Twitter...")
         media = tweeter.upload(image_path)
 
         LOGGER.info("Sending tweet...")
         tweet_text = tweet_text.format(
+            direction=direction,
+            direction_capitalize=direction_capitalize,
             latitude=p.lat,
             longitude=p.lon,
             point_fancy=p.fancy(),
-            direction=direction,
             osm_url=osm_url,
             googlemaps_url=googlemaps_url,
             location_full_name=location_full_name,
             location_country=location_country,
-            location_globe_emoji="🌎" if p.lon < -30 else "🌍" if p.lon < 60 else "🌏"
+            location_globe_emoji=location_globe_emoji,
+            area_size=area_size
         )
         LOGGER.debug(tweet_text)
         if include_location_in_metadata:
             tweeter.tweet(tweet_text, media, p)
         else:
             tweeter.tweet(tweet_text, media)
+
+    if tooting:
+        LOGGER.info("Connecting to Mastodon...")
+        tooter = Tooter(m_api_base_url, m_access_token)
+
+        LOGGER.info("Uploading image to Mastodon...")
+        media = tooter.upload(image_path)
+        LOGGER.debug(media)
+
+        LOGGER.info("Sending toot...")
+        toot_text = toot_text.format(
+            direction=direction,
+            direction_capitalize=direction_capitalize,
+            latitude=p.lat,
+            longitude=p.lon,
+            point_fancy=p.fancy(),
+            osm_url=osm_url,
+            googlemaps_url=googlemaps_url,
+            location_globe_emoji=location_globe_emoji,
+            area_size=area_size
+        )
+        LOGGER.debug(toot_text)
+        tooter.toot(toot_text, media)
 
     LOGGER.info("All done!")
 
