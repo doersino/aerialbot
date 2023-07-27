@@ -6,6 +6,7 @@ import random
 import sys
 import time
 from datetime import datetime
+import json
 
 import argparse
 
@@ -33,6 +34,7 @@ Image.MAX_IMAGE_PIXELS = None
 import tweepy
 from mastodon import Mastodon, MastodonError
 
+from aerialbot_utilities import get_location_nominatim, get_location_googlemaps
 
 TILE_SIZE = 256  # in pixels
 EARTH_CIRCUMFERENCE = 40075.016686 * 1000  # in meters, at the equator
@@ -990,25 +992,6 @@ class Tweeter:
         # Client for API v2 access
         self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret, access_token=access_token, access_token_secret=access_token_secret)
 
-    def get_location(self, geopoint):
-        full_name = ""
-        country = ""
-
-        try:
-            # The API v2 has no reverse geocoding, so we use Nominatim instead
-            # TODO Make the Geo configurable for those without Geo access, use Nominatim
-            geolocator = Nominatim(user_agent="aerialbot")
-            location = geolocator.reverse((geopoint.lat, geopoint.lon), language='th')
-            full_name = location.address
-            country = location.raw['address']['country']
-        except KeyError:
-
-            # can apparently sometimes occur if twitter doesn't have geodata
-            # for the selected location
-            pass
-
-        return (full_name, country)
-
     def upload(self, path):
         """Uploads an image to Twitter."""
 
@@ -1073,6 +1056,7 @@ class Tooter:
 
         self.__retry__(__do_toot__, MastodonError)
 
+
 def main():
     global VERBOSITY
     global LOGGER
@@ -1101,9 +1085,9 @@ def main():
     logfile = config['GENERAL']['logfile']
     LOGGER = Log(logfile)
 
-    ############################################################################
+    ################################################brevity############################
 
-    # copy the configuration into variables for brevity
+    # copy the configuration into variables for 
     tile_path_template = config['GENERAL']['tile_path_template']
     image_path_template = config['GENERAL']['image_path_template']
 
@@ -1122,6 +1106,10 @@ def main():
 
     apply_adjustments = config['IMAGE']['apply_adjustments']
     image_quality = config['IMAGE']['image_quality']
+
+    reverse_geocoding_service = config['LOCATIONSERVICES']['reverse_geocoding_service']
+    google_maps_api_key = config['LOCATIONSERVICES']['google_maps_api_key']
+    google_maps_reverse_geocoding_language = config['LOCATIONSERVICES']['google_maps_reverse_geocoding_language']
 
     t_consumer_key = config['TWITTER']['consumer_key']
     t_consumer_secret = config['TWITTER']['consumer_secret']
@@ -1370,8 +1358,11 @@ def main():
         tweeter = Tweeter(t_consumer_key, t_consumer_secret, t_access_token, t_access_token_secret)
 
         #if "location_full_name" in tweet_text or "location_country" in tweet_text:
-        LOGGER.info("Getting location information from Twitter...")
-        (location_full_name, location_country) = tweeter.get_location(p)
+        LOGGER.info("Getting location information...")
+        if reverse_geocoding_service == "googlemaps":
+            (location_full_name, location_country) = get_location_googlemaps(p, google_maps_reverse_geocoding_language, google_maps_api_key) #tweeter.get_location(p)
+        elif reverse_geocoding_service == "nominatim":
+            (location_full_name, location_country) = get_location_nominatim(p)
         LOGGER.debug((location_full_name, location_country))
 
         LOGGER.info("Uploading image to Twitter...")
