@@ -998,12 +998,6 @@ class Tweeter:
         return self.api.media_upload(path)
 
     def tweet(self, text, media, geopoint=None):
-        if geopoint:
-            # Twitter API v1.1 moved Geo behide a paywall, so there is no way to embed the place_id to the tweet
-            # TODO Make the Geo configurable
-            self.client.create_tweet(text=text,media_ids=[media.media_id])
-        else:
-            #self.api.update_status(text, media_ids=[media.media_id])
             self.client.create_tweet(text=text, media_ids=[media.media_id])
 
 class Tooter:
@@ -1363,7 +1357,7 @@ def main():
         # so we need to use a third party services, currently supported are Google Maps and Nominatim.
         # Nominatim is free, but it is not as accurate as Google Maps in some locations, especially in South-East Asia.
         # Google Maps is more accurate, but it is not free, and it requires an API key.
-        
+
         if reverse_geocoding_service == "googlemaps":
             (location_full_name, location_country) = get_location_googlemaps(p, google_maps_reverse_geocoding_language, google_maps_api_key) #tweeter.get_location(p)
         elif reverse_geocoding_service == "nominatim":
@@ -1411,7 +1405,9 @@ def main():
             osm_url=osm_url,
             googlemaps_url=googlemaps_url,
             location_globe_emoji=location_globe_emoji,
-            area_size=area_size
+            area_size=area_size,
+            location_full_name=location_full_name,
+            location_country=location_country
         )
         LOGGER.debug(toot_text)
         tooter.toot(toot_text, media)
