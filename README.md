@@ -25,15 +25,13 @@ You can also take a look at their now-silent Twitter equivalents...
 * 🌍 [@placesfromorbit](https://twitter.com/placesfromorbit), a "worldwide" instance that tweets a 5×5 km square every 6 hours.
 * 🌆 [@citiesatanangle](https://twitter.com/citiesatanangle), an instance that tweets tightly-zoomed 45-degree views of (sub)urban areas around the world every 12 hours.
 
-...and still-active instances run by others ([let me know](https://twitter.com/Doersino) if you want yours to be included):
+...and formerly-active instances run by others (let me know – by, say, filing an issue – if you want yours to be included):
 
 * 🇩🇰 [@DanskKvadrat](https://twitter.com/DanskKvadrat) (run by [@Wegge](https://twitter.com/Wegge)), which focuses on Denmark and tweets a 2×2 km square every 4 hours.
 * 🇷🇴 [@AerianRobot](https://twitter.com/AerianRobot) (not sure who runs it), which tweets a square-shaped portion of Romania twice each day.
 * 🇳🇱 [@NL_kwadraat](https://twitter.com/NL_kwadraat) (run by [@michelbinkhorst](https://twitter.com/michelbinkhorst)), which tweets a 2×2 km square of the Netherlands three times each day.
 * 🇳🇱 [@amsUpTop](https://twitter.com/amsUpTop) (run by [@kns008](https://twitter.com/kns008)), which tweets a random square of Amsterdam or its surroundings once a day.
 * 🇹🇷 [@turkeyfromorbit](https://twitter.com/turkeyfromorbit) (run by [@btutal](https://twitter.com/btutal) and also active on [Instagram](https://www.instagram.com/turkeyfromorbit/)), where an ærialbot instance tweets square-kilometer-sized satellite images of Turkey while an [earthacrosstime](https://github.com/doersino/earthacrosstime) instance posts videos as described in the next sentence.
-
-I've set up a [Twitter list](https://twitter.com/i/lists/1416308332529393672), enabling you to check out (and perhaps follow) all of them.
 
 Also check out [@earthacrosstime](https://twitter.com/earthacrosstime) (newly also posting on [@aerialbot@botsin.space](https://botsin.space/@aerialbot)), a "sibling" bot that posts timelapse videos showcasing how random locations in the world have changed since 1984.
 
