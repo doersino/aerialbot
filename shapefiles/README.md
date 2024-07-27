@@ -1,4 +1,4 @@
-This directory contains some shapefiles one might feel inclined to use for a specific ærialbot-based Twitter bot.
+This directory contains some shapefiles one might feel inclined to use for a specific ærialbot instance.
 
 ## Sources
 
