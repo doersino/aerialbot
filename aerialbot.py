@@ -6,6 +6,7 @@ import random
 import sys
 import time
 from datetime import datetime
+import json
 
 import argparse
 
@@ -25,12 +26,15 @@ from configobj import ConfigObj
 import shapefile
 import shapely.geometry
 
+from geopy.geocoders import Nominatim
+
 from PIL import Image, ImageEnhance, ImageOps
 Image.MAX_IMAGE_PIXELS = None
 
 import tweepy
 from mastodon import Mastodon, MastodonError
 
+from aerialbot_utilities import get_location_nominatim, get_location_googlemaps
 
 TILE_SIZE = 256  # in pixels
 EARTH_CIRCUMFERENCE = 40075.016686 * 1000  # in meters, at the equator
@@ -979,26 +983,14 @@ class Tweeter:
         # for references, see:
         # http://docs.tweepy.org/en/latest/api.html#status-methods
         # https://developer.twitter.com/en/docs/tweets/post-and-engage/guides/post-tweet-geo-guide
-        auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+        # This part is dirty. Though Twitter moved to API v2, the media upload is still in API v1.1
+        # So we need to use both API v1.1 and v2
+        auth = tweepy.OAuth1UserHandler(consumer_key, consumer_secret)
         auth.set_access_token(access_token, access_token_secret)
+        # API for API v1.1 access
         self.api = tweepy.API(auth)
-
-    def get_location(self, geopoint):
-        full_name = ""
-        country = ""
-
-        try:
-            location = self.api.reverse_geocode(geopoint.lat, geopoint.lon)
-            if location:
-                full_name = location[0].full_name
-                country = location[0].country
-        except KeyError:
-
-            # can apparently sometimes occur if twitter doesn't have geodata
-            # for the selected location
-            pass
-
-        return (full_name, country)
+        # Client for API v2 access
+        self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret, access_token=access_token, access_token_secret=access_token_secret)
 
     def upload(self, path):
         """Uploads an image to Twitter."""
@@ -1006,16 +998,7 @@ class Tweeter:
         return self.api.media_upload(path)
 
     def tweet(self, text, media, geopoint=None):
-        if geopoint:
-            self.api.update_status(
-                text,
-                media_ids=[media.media_id],
-                lat=geopoint.lat,
-                long=geopoint.lon,
-                display_coordinates=True
-            )
-        else:
-            self.api.update_status(text, media_ids=[media.media_id])
+            self.client.create_tweet(text=text, media_ids=[media.media_id])
 
 class Tooter:
     """
@@ -1067,6 +1050,7 @@ class Tooter:
 
         self.__retry__(__do_toot__, MastodonError)
 
+
 def main():
     global VERBOSITY
     global LOGGER
@@ -1095,9 +1079,9 @@ def main():
     logfile = config['GENERAL']['logfile']
     LOGGER = Log(logfile)
 
-    ############################################################################
+    ################################################brevity############################
 
-    # copy the configuration into variables for brevity
+    # copy the configuration into variables for 
     tile_path_template = config['GENERAL']['tile_path_template']
     image_path_template = config['GENERAL']['image_path_template']
 
@@ -1116,6 +1100,10 @@ def main():
 
     apply_adjustments = config['IMAGE']['apply_adjustments']
     image_quality = config['IMAGE']['image_quality']
+
+    reverse_geocoding_service = config['LOCATIONSERVICES']['reverse_geocoding_service']
+    google_maps_api_key = config['LOCATIONSERVICES']['google_maps_api_key']
+    google_maps_reverse_geocoding_language = config['LOCATIONSERVICES']['google_maps_reverse_geocoding_language']
 
     t_consumer_key = config['TWITTER']['consumer_key']
     t_consumer_secret = config['TWITTER']['consumer_secret']
@@ -1364,8 +1352,16 @@ def main():
         tweeter = Tweeter(t_consumer_key, t_consumer_secret, t_access_token, t_access_token_secret)
 
         #if "location_full_name" in tweet_text or "location_country" in tweet_text:
-        LOGGER.info("Getting location information from Twitter...")
-        (location_full_name, location_country) = tweeter.get_location(p)
+        LOGGER.info("Getting location information...")
+        # The current free tier of Twitter V1.1 API does not support reverse geocoding
+        # so we need to use a third party services, currently supported are Google Maps and Nominatim.
+        # Nominatim is free, but it is not as accurate as Google Maps in some locations, especially in South-East Asia.
+        # Google Maps is more accurate, but it is not free, and it requires an API key.
+
+        if reverse_geocoding_service == "googlemaps":
+            (location_full_name, location_country) = get_location_googlemaps(p, google_maps_reverse_geocoding_language, google_maps_api_key) #tweeter.get_location(p)
+        elif reverse_geocoding_service == "nominatim":
+            (location_full_name, location_country) = get_location_nominatim(p)
         LOGGER.debug((location_full_name, location_country))
 
         LOGGER.info("Uploading image to Twitter...")
@@ -1409,7 +1405,9 @@ def main():
             osm_url=osm_url,
             googlemaps_url=googlemaps_url,
             location_globe_emoji=location_globe_emoji,
-            area_size=area_size
+            area_size=area_size,
+            location_full_name=location_full_name,
+            location_country=location_country
         )
         LOGGER.debug(toot_text)
         tooter.toot(toot_text, media)
