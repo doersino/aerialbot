@@ -14,7 +14,7 @@ In a bit more detail, whenever you run ærialbot, it...
 * **saves** that to disk,
 * and **tweets and/or toots** the image, optionally with a geotag.
 
-**As of November 2022, I've migrated all ærialbot instaces I had been running to Mastodon – follow them at [@aerialbot@botsin.space](https://botsin.space/@aerialbot) if you like.**
+**As of November 2022, I've migrated all ærialbot instaces I had been running to Mastodon – follow them at [@aerialbot@mastodon.social](https://mastodon.social/@aerialbot) if you like.**
 
 You can also take a look at their now-silent Twitter equivalents...
 
@@ -33,7 +33,7 @@ You can also take a look at their now-silent Twitter equivalents...
 * 🇳🇱 [@amsUpTop](https://twitter.com/amsUpTop) (run by [@kns008](https://twitter.com/kns008)), which tweets a random square of Amsterdam or its surroundings once a day.
 * 🇹🇷 [@turkeyfromorbit](https://twitter.com/turkeyfromorbit) (run by [@btutal](https://twitter.com/btutal) and also active on [Instagram](https://www.instagram.com/turkeyfromorbit/)), where an ærialbot instance tweets square-kilometer-sized satellite images of Turkey while an [earthacrosstime](https://github.com/doersino/earthacrosstime) instance posts videos as described in the next sentence.
 
-Also check out [@earthacrosstime](https://twitter.com/earthacrosstime) (newly also posting on [@aerialbot@botsin.space](https://botsin.space/@aerialbot)), a "sibling" bot that posts timelapse videos showcasing how random locations in the world have changed since 1984.
+Also check out [@earthacrosstime](https://twitter.com/earthacrosstime) (newly also posting on [@aerialbot@mastodon.social](https://mastodon.social/@aerialbot)), a "sibling" bot that posts timelapse videos showcasing how random locations in the world have changed since 1984.
 
 ![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example1.jpg)
 
