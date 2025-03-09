@@ -2,6 +2,7 @@ aerialbot-*.jpg
 aerialbot-tiles
 aerialbot.log
 config.ini
+test*.ini
 
 # venv stuff
 bin

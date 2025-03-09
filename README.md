@@ -104,7 +104,9 @@ If you want your bot to post at predefined intervals, use `cron`, [`runwhen`](ht
 
 *Pro tip:* If you want to host multiple instances of ærialbot, you don't need multiple copies of the code – multiple config files suffice: simply run `python3 aerialbot.py one-of-your-config-files.ini`.
 
-*Uber pro tip:* Run `python3 aerialbot.py --help` to learn about some secret CLI options!
+*Uber pro tip:* You can maintain a base config (say, with your directory setup, image size settings, and Mastodon credentials) plus individual configs (say, for shapefiles and area sizes), then supply two or more config files on the command line (the later ones override settings defined previously): `python3 aerialbot.py base.ini specific.ini tweak.ini`.
+
+*1337 H4x0r pro tip:* Run `python3 aerialbot.py --help` to learn about some secret CLI options!
 
 
 ## FAQ

@@ -1060,7 +1060,7 @@ def main():
     # handle potential cli arguments
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument('--help', action='help', default=argparse.SUPPRESS, help=argparse._('show this help message and exit'))  # override default help argument so that only --help (and not -h) can call
-    parser.add_argument('config_path', metavar='CONFIG_PATH', type=str, nargs='?', default="config.ini", help='config file to use instead of looking for config.ini in the current working directory')
+    parser.add_argument('config_paths', metavar='CONFIG_PATH', type=str, nargs='*', default=["config.ini"], help='config file(s) to use instead of looking for config.ini in the current working directory (if you specify multiple, they will be merged left-to-right, with options in the right-most config file taking precedence; individual files can be incomplete as long as the merge result contains all parameters)')
     parser.add_argument('-p', '--point', dest='point', metavar='LAT,LON', type=str, help='a point, e.g. \'37.453896,126.446829\', that will override your configuration (if its latitude is negative, option parsing might throw an error – simply write -p="LAT,LON" in that case)')  # https://stackoverflow.com/questions/16174992/cant-get-argparse-to-read-quoted-string-with-dashes-in-it
     parser.add_argument('-m', '--max-meters-per-pixel', dest='max_meters_per_pixel', metavar='N', type=float, help='a maximum meters per pixel constraint that will override your configuration')
     parser.add_argument('-w', '--width', dest='width', metavar='N', type=float, help='width of the depicted area in meters, will override your configuration')
@@ -1070,10 +1070,13 @@ def main():
     parser.add_argument('--direction', dest='direction_cli', type=str, choices=["northward", "eastward", "southward", "westward"], help='view direction (only applicable if the "googlemaps-oblique-random" tile url preset is selected in the config file; overrides the randomization)')
     args = parser.parse_args()
 
-    # load configuration either from config.ini or from a user-supplied file
+    # load configuration either from config.ini or from user-supplied files
     # (the latter option is handy if you want to run multiple instances of
     # ærialbot with different configurations)
-    config = ConfigObj(args.config_path, unrepr=True)
+    config = ConfigObj()
+    for config_path in args.config_paths:
+        loaded_config = ConfigObj(config_path, unrepr=True)
+        config.merge(loaded_config)
 
     # first of all, set up logging at the correct verbosity (and make the
     # verbosity available globally since it's needed for the progress indicator)
