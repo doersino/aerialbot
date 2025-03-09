@@ -382,6 +382,39 @@ class GeoShape:
         # the first call of the random_geopoint function
         self.shapes_data = None
 
+        # initialize excludes as empty list for now
+        self.excludes = []
+
+    def add_exclude(self, exclude_shapefile_path):
+        """
+        Loads another shapefile and adds its contents to the list of shapes to
+        exclude when generating a random point.
+        """
+
+        esf = shapefile.Reader(exclude_shapefile_path)
+        shapes = esf.shapes()
+
+        # sanity checks
+        assert len(shapes) > 0
+        assert all([shape.shapeTypeName == 'POLYGON' for shape in shapes])
+
+        self.excludes.append(shapes)
+
+    def excluded(self, geopoint):
+        """
+        Checks if input point falls into at least one of the shapes to exclude.
+        """
+
+        point = geopoint.to_shapely_point()
+
+        for exclude_shapes in self.excludes:
+            for shape in exclude_shapes:
+                polygon = shapely.geometry.shape(shape)
+                if polygon.contains(point):
+                    return True
+
+        return False
+
     def random_geopoint(self):
         """
         A random geopoint, using rejection sampling to make sure it's
@@ -454,8 +487,8 @@ class GeoShape:
             polygon = shapely.geometry.shape(shape["outline"])
             contains = polygon.contains(point)
 
-            # ... if so, great...
-            if contains:
+            # ... if so, great (but ensure it's not excluded)...
+            if contains and not self.excluded(geopoint):
                 return geopoint
 
             # ...else, try again...
@@ -1057,6 +1090,7 @@ def main():
     tile_url_template = config['GEOGRAPHY']['tile_url_template']
 
     shapefile = config['GEOGRAPHY']['shapefile']
+    exclude_shapefile = config['GEOGRAPHY']['exclude_shapefile']
     point = config['GEOGRAPHY']['point']
 
     width = config['GEOGRAPHY']['width']
@@ -1211,6 +1245,11 @@ def main():
         LOGGER.info("Loading shapefile...")
         LOGGER.debug(shapefile)
         shapes = GeoShape(shapefile)
+
+        if exclude_shapefile is not None:
+            LOGGER.info("Loading exclude shapefile...")
+            LOGGER.debug(exclude_shapefile)
+            shapes.add_exclude(exclude_shapefile)
 
     for tries in range(0, max_tries):
         if tries > max_tries:
