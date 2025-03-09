@@ -1,6 +1,7 @@
 aerialbot-*.jpg
 aerialbot-tiles
-aerialbot.log
+aerialbot*.log
+config
 config.ini
 test*.ini
 
