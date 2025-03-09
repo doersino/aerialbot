@@ -1084,6 +1084,9 @@ def main():
     logfile = config['GENERAL']['logfile']
     LOGGER = Log(logfile)
 
+    LOGGER.info("Starting up, already read config...")
+    LOGGER.debug(args.config_paths)
+
     ############################################################################
 
     # copy the configuration into variables for brevity
