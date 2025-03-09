@@ -28,7 +28,6 @@ import shapely.geometry
 from PIL import Image, ImageEnhance, ImageOps
 Image.MAX_IMAGE_PIXELS = None
 
-import tweepy
 from mastodon import Mastodon, MastodonError
 
 
@@ -971,52 +970,6 @@ class Log:
             self.critical(line)
         sys.exit(1)
 
-class Tweeter:
-    """Basic class for tweeting images, a simple wrapper around tweepy."""
-
-    def __init__(self, consumer_key, consumer_secret, access_token, access_token_secret):
-
-        # for references, see:
-        # http://docs.tweepy.org/en/latest/api.html#status-methods
-        # https://developer.twitter.com/en/docs/tweets/post-and-engage/guides/post-tweet-geo-guide
-        auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-        auth.set_access_token(access_token, access_token_secret)
-        self.api = tweepy.API(auth)
-
-    def get_location(self, geopoint):
-        full_name = ""
-        country = ""
-
-        try:
-            location = self.api.reverse_geocode(geopoint.lat, geopoint.lon)
-            if location:
-                full_name = location[0].full_name
-                country = location[0].country
-        except KeyError:
-
-            # can apparently sometimes occur if twitter doesn't have geodata
-            # for the selected location
-            pass
-
-        return (full_name, country)
-
-    def upload(self, path):
-        """Uploads an image to Twitter."""
-
-        return self.api.media_upload(path)
-
-    def tweet(self, text, media, geopoint=None):
-        if geopoint:
-            self.api.update_status(
-                text,
-                media_ids=[media.media_id],
-                lat=geopoint.lat,
-                long=geopoint.lon,
-                display_coordinates=True
-            )
-        else:
-            self.api.update_status(text, media_ids=[media.media_id])
-
 class Tooter:
     """
     Basic class for tooting images or videos, a simple wrapper around the
@@ -1116,14 +1069,6 @@ def main():
 
     apply_adjustments = config['IMAGE']['apply_adjustments']
     image_quality = config['IMAGE']['image_quality']
-
-    t_consumer_key = config['TWITTER']['consumer_key']
-    t_consumer_secret = config['TWITTER']['consumer_secret']
-    t_access_token = config['TWITTER']['access_token']
-    t_access_token_secret = config['TWITTER']['access_token_secret']
-
-    tweet_text = config['TWITTER']['tweet_text']
-    include_location_in_metadata = config['TWITTER']['include_location_in_metadata']
 
     # workaround for old configuration files not containing a mastodon section
     m_api_base_url = None
@@ -1255,9 +1200,6 @@ def main():
         elif image_width is None:
             image_width = width * (image_height / height) * foreshortening_factor
 
-    # whether to enable or disable tweeting
-    tweeting = all(x is not None for x in [t_consumer_key, t_consumer_secret, t_access_token, t_access_token_secret])
-
     # whether to enable or disable tooting
     tooting = all(x is not None for x in [m_api_base_url, m_access_token])
 
@@ -1352,44 +1294,12 @@ def main():
 
     ############################################################################
 
-    # prep tweet/toot text variables
+    # prep toot text variables
     osm_url = f"https://www.openstreetmap.org/#map={zoom}/{p.lat}/{p.lon}"
     googlemaps_url = f"https://www.google.com/maps/@{p.lat},{p.lon},{zoom}z"
     location_globe_emoji = "🌎" if p.lon < -30 else "🌍" if p.lon < 60 else "🌏"
     area_size = f"{str(round(geowidth/1000, 2)).rstrip('0').rstrip('.')} × {str(round(geoheight/1000, 2)).rstrip('0').rstrip('.')} km"
     direction_capitalize = str(direction).capitalize()
-
-    if tweeting:
-        LOGGER.info("Connecting to Twitter...")
-        tweeter = Tweeter(t_consumer_key, t_consumer_secret, t_access_token, t_access_token_secret)
-
-        #if "location_full_name" in tweet_text or "location_country" in tweet_text:
-        LOGGER.info("Getting location information from Twitter...")
-        (location_full_name, location_country) = tweeter.get_location(p)
-        LOGGER.debug((location_full_name, location_country))
-
-        LOGGER.info("Uploading image to Twitter...")
-        media = tweeter.upload(image_path)
-
-        LOGGER.info("Sending tweet...")
-        tweet_text = tweet_text.format(
-            direction=direction,
-            direction_capitalize=direction_capitalize,
-            latitude=p.lat,
-            longitude=p.lon,
-            point_fancy=p.fancy(),
-            osm_url=osm_url,
-            googlemaps_url=googlemaps_url,
-            location_full_name=location_full_name,
-            location_country=location_country,
-            location_globe_emoji=location_globe_emoji,
-            area_size=area_size
-        )
-        LOGGER.debug(tweet_text)
-        if include_location_in_metadata:
-            tweeter.tweet(tweet_text, media, p)
-        else:
-            tweeter.tweet(tweet_text, media)
 
     if tooting:
         LOGGER.info("Connecting to Mastodon...")

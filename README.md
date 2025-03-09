@@ -1,6 +1,6 @@
 # ærialbot
 
-*A simple yet highly configurable Mastodon/Twitter bot that posts geotagged aerial imagery of a random location in the world.*
+*A simple yet highly configurable Mastodon bot that posts geotagged aerial imagery of a random location in the world.*
 
 ---
 
@@ -12,7 +12,9 @@ In a bit more detail, whenever you run ærialbot, it...
 * **downloads those map tiles** from a provider of your choice real fast (a threadpool is involved!),
 * **stitches** them together and **crops** the resulting image to precisely match the configured area,
 * **saves** that to disk,
-* and **tweets and/or toots** the image, optionally with a geotag.
+* and **posts** the image, optionally with a geotag.
+
+Formerly a Twitter bot (until fascist billionaire acquisition shenanigans ensued).
 
 **As of November 2022, I've migrated all ærialbot instaces I had been running to Mastodon – follow them at [@aerialbot@mastodon.social](https://mastodon.social/@aerialbot) if you like.**
 
@@ -33,7 +35,7 @@ You can also take a look at their now-silent Twitter equivalents...
 * 🇳🇱 [@amsUpTop](https://twitter.com/amsUpTop) (run by [@kns008](https://twitter.com/kns008)), which tweets a random square of Amsterdam or its surroundings once a day.
 * 🇹🇷 [@turkeyfromorbit](https://twitter.com/turkeyfromorbit) (run by [@btutal](https://twitter.com/btutal) and also active on [Instagram](https://www.instagram.com/turkeyfromorbit/)), where an ærialbot instance tweets square-kilometer-sized satellite images of Turkey while an [earthacrosstime](https://github.com/doersino/earthacrosstime) instance posts videos as described in the next sentence.
 
-Also check out [@earthacrosstime](https://twitter.com/earthacrosstime) (newly also posting on [@aerialbot@mastodon.social](https://mastodon.social/@aerialbot)), a "sibling" bot that posts timelapse videos showcasing how random locations in the world have changed since 1984.
+Also check out [earthacrosstime](https://github.com/doersino/earthacrosstime) (newly also posting on [@aerialbot@mastodon.social](https://mastodon.social/@aerialbot)), a "sibling" bot that posts timelapse videos showcasing how random locations in the world have changed since 1984.
 
 ![One square mile each, somewhere in the United Sates, centered around (from top left to bottom right): 31.056747601478456,-89.61225567756193; 26.44943037843055,-97.69999657039938; 39.32223925968352,-95.06302508257909; 33.830621832157895,-102.7345327711916; 46.149781016546264,-108.95292330126662; 20.755048248172997,-156.98230879693344; 41.21859102806858,-83.97344375576749; 36.89466223259036,-89.52366337871948; 36.07100491499848,-115.26963797305373; 42.87888803844798,-113.90920385179305; 33.90737575723908,-113.46512478011427; 45.009510867796266, -117.01147828430616](example1.jpg)
 
@@ -46,12 +48,11 @@ Also check out [@earthacrosstime](https://twitter.com/earthacrosstime) (newly al
 
 Here's why ærialbot is a [Good Bot](https://www.reddit.com/r/OutOfTheLoop/comments/6oca11/what_is_up_with_good_bot_bad_bot_comments/):
 
-* **Configurability:** Take a look at `config.sample.ini` – you can supply your own shapefile (or instead define a fixed point), control output verbosity, set a different map tile provider (there's a bunch of presets, including oblique views), define the filenames of the result images, scale them to your preferred size, define the text of the tweet/toot, and more!
+* **Configurability:** Take a look at `config.sample.ini` – you can supply your own shapefile (or instead define a fixed point), control output verbosity, set a different map tile provider (there's a bunch of presets, including oblique views), define the filenames of the result images, scale them to your preferred size, define the text of the post, and more!
 * ꙳**Correctness:** Because neighboring meridians are closer at the poles than at the equator, uniformly sampling the allowable range of latitudes would bias the generated random points toward the poles. Instead, ærialbot makes sure they are distributed with regard to surface area. For the same reason (plus the Mercator projection), the number of map tiles required to cover an area depends on the latitude – ærialbot accounts for this, too.
 * ꙳**Automatic zoom level determination:** Simply define the dimensions of the desired area around the generated point – ærialbot will then take care of dialing in a (more than) sufficient zoom level.
 * **Comes with batteries included:** The `shapefiles/` directory contains a number of shapefiles to get you started, along with a guide on preparing further shapefiles for use with ærialbot.
 * **Tile grabbing performance:** Multiple map tiles are downloaded in parallel, and there's a snazzy progress indicator (as you can see in the GIF below) to keep you updated on the download progress.
-* **Geotagging:** Tweets will be geotagged with the precise location – you can disable this, of course.
 * **Logging:** Keeps a log file – whether that's for debugging or reminiscing is your call. Again, you can disable this easily.
 
 ![What is this? It's a progress indicator. What does it do? It indicates progress.](demo.gif)
@@ -136,9 +137,9 @@ Possibly. Please feel free to [file an issue](https://github.com/doersino/aerial
 
 *These are ideas more than anything else – don't expect them to be implemented any time soon.*
 
-* Commission [@smolrobots](https://twitter.com/smolrobots/status/1224096411056320514) to draw a little mascot – maybe a satellite with a camera, or planet earth taking a selfie.
+* Commission [@smolrobots](https://mastodon.social/@smolrobots) to draw a little mascot – maybe a satellite with a camera, or planet earth taking a selfie.
 * Maybe split `aerialbot.py` up into multiple modules, take inspiration from [here](https://github.com/joaquinlpereyra/twitterImgBot). This might not be required right now, but would help if any of the ideas listed below are implemented.
-* Add an option to use [OSM/Nominatim](https://nominatim.org/release-docs/develop/api/Reverse/) for reverse geocoding. This could go along with a refactor where a `ReverseGeocoder` interface is introduced, which two classes `TwitterReverseGeocoder` (with a constructor taking the Twitter credentials) and `OsmReverseGeocoder` implement. The config file would have to be extended with a reverse geocoder selection option, plus a reverse geocode string template and an explanation of the available variables (which may differ depending on the selected geocoder). This reverse geocode string would then be referencable in the tweet/toot templates.
+* Add an option to use [OSM/Nominatim](https://nominatim.org/release-docs/develop/api/Reverse/) for reverse geocoding. This could go along with a refactor where a `ReverseGeocoder` interface is introduced, which two classes `TwitterReverseGeocoder` (with a constructor taking the Twitter credentials) and `OsmReverseGeocoder` implement. The config file would have to be extended with a reverse geocoder selection option, plus a reverse geocode string template and an explanation of the available variables (which may differ depending on the selected geocoder). This reverse geocode string would then be referencable in the post template.
 * In addition to `GeoShape.random_geopoint`, also implement a `Shape.random_edge_geopoint` function for generating points on the edge of polygons (and polylines), and make it available via a config setting. This would 1. help test whether a given shapefile is accurate (and whether its projection is suitable), and 2. enable posting images of coastlines or border regions, which might be interesting. Random point selection on polygon outlines would need to be done by randomly picking a segment of the outline via a distribution based on a prefix sum of the haversine distances along the outlines, then uniformly picking a point along the chosen segment (or linearly interpolating).
 * Similarly, if a shapefile with (multi)points instead of a polygon or polyline is given, randomly select a location among those points. This could be used to set up a bot that posts landmarks belonging to a certain category around the world (if such data is publicly available, that is – I'm sure [OSM data](https://wiki.openstreetmap.org/wiki/Shapefiles) could be [filtered](https://github.com/osmcode/pyosmium/blob/master/examples/filter_coastlines.py) accordingly). For example: [Airports](https://airports-list.com/iata-code).
 * Support Bing Maps as a tile source. That'd involve parametrizing how map tiles are accessed since Bing Maps doesn't use the x-y-z coordinate system favored by most every other service, instead employing [its own "Quadkeys" tile indexing approach](https://docs.microsoft.com/en-us/bingmaps/articles/bing-maps-tile-system) which essentially encodes a path along a quad tree.
