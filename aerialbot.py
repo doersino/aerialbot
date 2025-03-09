@@ -35,9 +35,9 @@ TILE_SIZE = 256  # in pixels
 EARTH_CIRCUMFERENCE = 40075.016686 * 1000  # in meters, at the equator
 
 # Google Maps version to use if the current version cannot be determined, up to
-# date as of November 2022, will likely continue to work for at least a while
-GOOGLE_MAPS_VERSION_FALLBACK = '934'
-GOOGLE_MAPS_OBLIQUE_VERSION_FALLBACK = '148'
+# date as of March 2025, will likely continue to work for at least a while
+GOOGLE_MAPS_VERSION_FALLBACK = '995'
+GOOGLE_MAPS_OBLIQUE_VERSION_FALLBACK = '163'
 
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15"
 
