@@ -1078,14 +1078,25 @@ def main():
         loaded_config = ConfigObj(config_path, unrepr=True)
         config.merge(loaded_config)
 
-    # first of all, set up logging at the correct verbosity (and make the
-    # verbosity available globally since it's needed for the progress indicator)
+    # first of all, determine config identifier
+    config_identifier = config['GENERAL']['config_identifier']
+
+    # before anything else, set up logging at the correct verbosity (and make
+    # the verbosity available globally since it's needed for the progress
+    # indicator)
     VERBOSITY = config['GENERAL']['verbosity']
     logfile = config['GENERAL']['logfile']
+    logfile = logfile.format(
+        yyyy=datetime.today().strftime('%Y'),
+        mm=datetime.today().strftime('%m'),
+        dd=datetime.today().strftime('%d'),
+        config_identifier=config_identifier
+    )
     LOGGER = Log(logfile)
 
     LOGGER.info("Starting up, already read config...")
     LOGGER.debug(args.config_paths)
+    LOGGER.info(f"Config identifier is: {config_identifier}")
 
     ############################################################################
 
@@ -1329,7 +1340,8 @@ def main():
         ymin=grid.at(0, 0).y,
         ymax=grid.at(0, 0).y+grid.height,
         zoom=zoom,
-        georect=f"sw{rect.sw.lat},{rect.sw.lon}ne{rect.ne.lat},{rect.ne.lon}"
+        georect=f"sw{rect.sw.lat},{rect.sw.lon}ne{rect.ne.lat},{rect.ne.lon}",
+        config_identifier=config_identifier
     )
     LOGGER.debug(image_path)
     d = os.path.dirname(image_path)
@@ -1364,7 +1376,8 @@ def main():
             osm_url=osm_url,
             googlemaps_url=googlemaps_url,
             location_globe_emoji=location_globe_emoji,
-            area_size=area_size
+            area_size=area_size,
+            config_identifier=config_identifier
         )
         LOGGER.debug(toot_text)
         tooter.toot(toot_text, media)
