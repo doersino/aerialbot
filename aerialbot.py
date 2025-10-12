@@ -1159,7 +1159,7 @@ def main():
     if args.direction_cli:
         direction_cli = args.direction_cli
     if 'MASTODON' in config and args.text_cli:
-        toot_text = bytes(args.text_cli, "utf-8").decode("unicode_escape")
+        toot_text = args.text_cli
 
     ############################################################################
 
