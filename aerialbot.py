@@ -1068,6 +1068,7 @@ def main():
     parser.add_argument('--image_width', dest='image_width', metavar='N', type=float, help='width of the result image, will override your configuration (where you can also find an explanation of how this option interacts with the -m, -w, and -h options)')
     parser.add_argument('--image_height', dest='image_height', metavar='N', type=float, help='height of the result image, will override your configuration (where you can also find an explanation of how this option interacts with the -m, -w, and -h options)')
     parser.add_argument('--direction', dest='direction_cli', type=str, choices=["northward", "eastward", "southward", "westward"], help='view direction (only applicable if the "googlemaps-oblique-random" tile url preset is selected in the config file; overrides the randomization)')
+    parser.add_argument('-t', '--text', dest='text_cli', type=str, metavar='TEXT', help='toot text, will override your configuration')
     args = parser.parse_args()
 
     # load configuration either from config.ini or from user-supplied files
@@ -1157,6 +1158,8 @@ def main():
     direction_cli = None
     if args.direction_cli:
         direction_cli = args.direction_cli
+    if 'MASTODON' in config and args.text_cli:
+        toot_text = args.text_cli
 
     ############################################################################
 
